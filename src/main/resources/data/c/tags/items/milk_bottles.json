@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "milk-lib:milk_bottle",
+      "required": false
+    },
+    {
+      "id": "milk-lib:splash_milk_bottle",
+      "required": false
+    },
+    {
+      "id": "milk-lib:lingering_milk_bottle",
+      "required": false
+    }
+  ]
+}

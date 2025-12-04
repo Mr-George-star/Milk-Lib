@@ -1,0 +1,47 @@
+{
+	"schemaVersion": 1,
+	"id": "milk-lib",
+	"version": "${version}",
+	"name": "Milk Lib",
+	"description": "This is a high-version port of TropheusJ's milk-lib and dripstone-fluid-lib, with various milk-related extensions added",
+	"authors": [
+		"Tropheus Jay",
+		"Mr.George"
+	],
+	"contact": {
+	},
+	"license": "MIT License",
+	"icon": "assets/milk-lib/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.george.milk.MilkLib"
+		],
+		"client": [
+			"net.george.milk.MilkLibClient"
+		],
+		"fabric-datagen": [
+			"net.george.milk.MilkLibDataGenerator"
+		]
+	},
+	"mixins": [
+		"milk-lib.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.1",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"accessWidener": "milk-lib.accesswidener",
+	"suggests": {
+		"another-mod": "*"
+	},
+	"custom": {
+		"modmenu": {
+			"badges": [
+				"library"
+			]
+		}
+	}
+}

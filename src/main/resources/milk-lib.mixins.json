@@ -1,0 +1,32 @@
+{
+  "required": true,
+  "package": "net.george.milk.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "BrewingStandScreenHandlerPotionSlotMixin",
+    "CauldronBlockMixin",
+    "CowEntityMixin",
+    "EntityMixin",
+    "GlassBottleItemMixin",
+    "MilkBucketItemMixin",
+    "PointedDripstoneBlockMixin",
+    "PotionEntityMixin",
+    "RegistryMixin",
+    "pathfinding.BirdPathNodeMakerMixin",
+    "pathfinding.LandPathNodeMakerMixin",
+    "pathfinding.MobNavigationMixin"
+  ],
+  "client": [
+    "BackgroundRendererMixin",
+    "ClientRegistryMixin",
+    "MinecraftClientMixin",
+    "ParticleManagerAccessor",
+    "ParticleManagerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

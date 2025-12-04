@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "milk-lib:flowing_milk",
+      "required": false
+    },
+    {
+      "id": "milk-lib:still_milk",
+      "required": false
+    }
+  ]
+}
