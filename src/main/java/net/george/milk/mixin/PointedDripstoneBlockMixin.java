@@ -30,7 +30,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Optional;
 
-@Mixin(value = PointedDripstoneBlock.class, priority = 429) // random number to apply overwrites early, let other mods inject
+@SuppressWarnings("StructuralWrap")
+@Mixin(value = PointedDripstoneBlock.class, priority = 429) // random number to apply overwriting early, let other mods inject
 public abstract class PointedDripstoneBlockMixin {
     @Shadow
     private static boolean isHeldByPointedDripstone(BlockState state, WorldView world, BlockPos pos) {
@@ -117,7 +118,7 @@ public abstract class PointedDripstoneBlockMixin {
      */
     @Overwrite
     private static void createParticle(World world, BlockPos pos, BlockState state, Fluid fluid) {
-        Vec3d modelOffset = state.getModelOffset(world, pos);
+        Vec3d modelOffset = state.getModelOffset(pos);
         double x = pos.getX() + 0.5 + modelOffset.x;
         double y = ((pos.getY() + 1) - 0.6875F) - 0.0625;
         double z = pos.getZ() + 0.5 + modelOffset.z;

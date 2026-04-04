@@ -6,18 +6,22 @@ import net.minecraft.block.FluidFillable;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FlowableFluid;
 import net.minecraft.fluid.Fluid;
-import net.minecraft.item.*;
+import net.minecraft.item.FluidModificationItem;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.stat.Stats;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
-import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldAccess;
@@ -28,22 +32,23 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = MilkBucketItem.class, priority = 921) // apply sooner, minimize conflicts
-public abstract class MilkBucketItemMixin extends Item implements FluidModificationItem {
-	public MilkBucketItemMixin(Settings settings) {
-		super(settings);
-	}
-
+@Mixin(value = Item.class, priority = 921) // apply sooner, minimize conflicts
+public abstract class MilkBucketItemMixin implements FluidModificationItem {
 	@Inject(method = "use", at = @At("HEAD"), cancellable = true)
-	private void onUse(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<TypedActionResult<ItemStack>> cir) {
+	private void onUse(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
 		ItemStack stack = user.getStackInHand(hand);
-		BlockHitResult hitResult = raycast(world, user, RaycastContext.FluidHandling.NONE);
+		if (!stack.isOf(Items.MILK_BUCKET)) {
+			cir.cancel();
+			return;
+		}
+
+		BlockHitResult hitResult = milkLib$raycast(world, user);
 		if (hitResult.getType() == HitResult.Type.MISS) {
-			cir.setReturnValue(TypedActionResult.pass(stack));
+			cir.setReturnValue(ActionResult.PASS);
 			return;
 		}
 		if (hitResult.getType() != HitResult.Type.BLOCK) {
-			cir.setReturnValue(TypedActionResult.pass(stack));
+			cir.setReturnValue(ActionResult.PASS);
 			return;
 		}
 
@@ -51,23 +56,23 @@ public abstract class MilkBucketItemMixin extends Item implements FluidModificat
 		Direction side = hitResult.getSide();
 		BlockPos placePos = hitPos.offset(side);
 		if (!world.canPlayerModifyAt(user, hitPos) || !user.canPlaceOn(placePos, side, stack)) {
-			cir.setReturnValue(TypedActionResult.fail(stack));
+			cir.setReturnValue(ActionResult.FAIL);
 			return;
 		}
 		if (world.getBlockState(hitPos).isIn(MilkLib.MILK_PLACEMENT_DISALLOWED)) {
-			cir.setReturnValue(TypedActionResult.pass(stack));
+			cir.setReturnValue(ActionResult.PASS);
 			return;
 		}
 
 		if (placeMilk(user, world, placePos, hitResult)) {
 			onEmptied(user, world, stack, placePos);
 			if (user instanceof ServerPlayerEntity serverPlayer) {
-				serverPlayer.incrementStat(Stats.USED.getOrCreateStat(this));
+				serverPlayer.incrementStat(Stats.USED.getOrCreateStat(Items.MILK_BUCKET));
 			}
 			ItemStack resultStack = user.isInCreativeMode() ? stack : new ItemStack(Items.BUCKET);
-			cir.setReturnValue(TypedActionResult.success(resultStack, world.isClient()));
+			cir.setReturnValue(ActionResult.SUCCESS.withNewHandStack(resultStack));
 		} else {
-			cir.setReturnValue(TypedActionResult.fail(stack));
+			cir.setReturnValue(ActionResult.FAIL);
 		}
 	}
 
@@ -116,5 +121,12 @@ public abstract class MilkBucketItemMixin extends Item implements FluidModificat
 	private void playEmptyingSound(PlayerEntity player, WorldAccess world, BlockPos pos) {
 		world.playSound(player, pos, SoundEvents.ITEM_BUCKET_EMPTY, SoundCategory.BLOCKS, 1.0F, 1.0F);
 		world.emitGameEvent(player, GameEvent.FLUID_PLACE, pos);
+	}
+
+	@Unique
+	private static BlockHitResult milkLib$raycast(World world, PlayerEntity player) {
+		Vec3d eyePos = player.getEyePos();
+		Vec3d rotated = eyePos.add(player.getRotationVector(player.getPitch(), player.getYaw()).multiply(player.getBlockInteractionRange()));
+		return world.raycast(new RaycastContext(eyePos, rotated, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, player));
 	}
 }

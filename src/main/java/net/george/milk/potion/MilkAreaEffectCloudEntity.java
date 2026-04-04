@@ -16,7 +16,7 @@ import java.util.Optional;
 public class MilkAreaEffectCloudEntity extends AreaEffectCloudEntity {
 	public MilkAreaEffectCloudEntity(World world, double x, double y, double z) {
 		super(world, x, y, z);
-		this.setPotionContents(new PotionContentsComponent(Optional.ofNullable(Potions.WATER), Optional.of(0xFFFFFF), List.of()));
+		this.setPotionContents(new PotionContentsComponent(Optional.ofNullable(Potions.WATER), Optional.of(0xFFFFFF), List.of(), Optional.empty()));
 	}
 
 	@Override

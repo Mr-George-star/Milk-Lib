@@ -13,6 +13,7 @@ import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.projectile.thrown.PotionEntity;
 import net.minecraft.entity.projectile.thrown.ThrownItemEntity;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -35,10 +36,9 @@ import java.util.List;
 @Mixin(PotionEntity.class)
 public abstract class PotionEntityMixin extends ThrownItemEntity implements FlyingItemEntity, PotionItemEntityExtensions {
     @Shadow protected abstract void extinguishFire(BlockPos pos);
-    @Shadow
-    protected abstract void applyWater();
+    @Shadow protected abstract void applyWater(ServerWorld world);
     @Shadow protected abstract void applyLingeringPotion(PotionContentsComponent potion);
-    @Shadow protected abstract void applySplashPotion(Iterable<StatusEffectInstance> effects, @Nullable Entity entity);
+    @Shadow protected abstract void applySplashPotion(ServerWorld world, Iterable<StatusEffectInstance> effects, @Nullable Entity entity);
 
     @Unique
     private boolean milk = false;
@@ -66,11 +66,12 @@ public abstract class PotionEntityMixin extends ThrownItemEntity implements Flyi
         if (isMilk()) {
             super.onCollision(hitResult);
             if (!this.getWorld().isClient) {
-                applyWater();
+                ServerWorld serverWorld = (ServerWorld) this.getWorld();
+                applyWater(serverWorld);
                 if (this.getStack().getItem() instanceof LingeringMilkBottle) {
                     applyLingeringPotion(null);
                 } else {
-                    applySplashPotion(null, hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null);
+                    applySplashPotion(serverWorld, null, hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null);
                 }
 
                 this.getWorld().syncWorldEvent(WorldEvents.INSTANT_SPLASH_POTION_SPLASHED, this.getBlockPos(), 0xFFFFFF);
@@ -81,7 +82,7 @@ public abstract class PotionEntityMixin extends ThrownItemEntity implements Flyi
     }
 
     @Inject(method = "applySplashPotion", at = @At("HEAD"), cancellable = true)
-    private void milkLib$applySplashPotion(Iterable<StatusEffectInstance> effects, Entity entity, CallbackInfo ci) {
+    private void milkLib$applySplashPotion(ServerWorld world, Iterable<StatusEffectInstance> effects, Entity entity, CallbackInfo ci) {
         if (isMilk()) {
             Box box = this.getBoundingBox().expand(4.0, 2.0, 4.0);
             List<LivingEntity> list = this.getWorld().getNonSpectatingEntities(LivingEntity.class, box);

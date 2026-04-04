@@ -6,8 +6,8 @@ import net.minecraft.fluid.FluidState;
 import net.minecraft.item.GlassBottleItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
-import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.RaycastContext;
@@ -29,13 +29,13 @@ public abstract class GlassBottleItemMixin extends Item {
 
 	@Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;playSound(Lnet/minecraft/entity/player/PlayerEntity;DDDLnet/minecraft/sound/SoundEvent;Lnet/minecraft/sound/SoundCategory;FF)V",
 			ordinal = 1, shift = At.Shift.AFTER), method = "use", cancellable = true)
-	public void milkLib$use(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<TypedActionResult<ItemStack>> cir) {
+	public void milkLib$use(World world, PlayerEntity user, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
 		if (MilkLib.MILK_BOTTLE != null && MilkLib.STILL_MILK != null) {
 			BlockHitResult hitResult = Item.raycast(world, user, RaycastContext.FluidHandling.SOURCE_ONLY);
 			BlockPos blockPos = hitResult.getBlockPos();
 			FluidState state = world.getFluidState(blockPos);
 			if (MilkLib.isMilk(state)) {
-				cir.setReturnValue(TypedActionResult.success(fill(user.getStackInHand(hand), user, new ItemStack(MilkLib.MILK_BOTTLE))));
+				cir.setReturnValue(ActionResult.SUCCESS.withNewHandStack(this.fill(user.getStackInHand(hand), user, new ItemStack(MilkLib.MILK_BOTTLE))));
 			}
 		}
 	}

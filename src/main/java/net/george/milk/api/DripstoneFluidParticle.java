@@ -7,8 +7,8 @@ import net.minecraft.client.world.ClientWorld;
 
 @Environment(EnvType.CLIENT)
 public class DripstoneFluidParticle extends WaterSplashParticle {
-    public DripstoneFluidParticle(ClientWorld clientWorld, double d, double e, double f, double g, double h, double i) {
-        super(clientWorld, d, e, f, g, h, i);
+    public DripstoneFluidParticle(ClientWorld clientWorld, double x, double y, double z, double velocityX, double velocityY, double velocityZ) {
+        super(clientWorld, x, y, z, velocityX, velocityY, velocityZ);
     }
 
     @Override

@@ -1,6 +1,6 @@
 {
   "block.milk-lib.milk_cauldron": "Milk Cauldron",
-  "item.milk-lib.milk_bottle": "Milk Bottle",
+  "item.milk-lib.milk_bottle.effect.water": "Milk Bottle",
   "item.milk-lib.splash_milk_bottle": "Splash Potion of Milk",
   "item.milk-lib.lingering_milk_bottle": "Lingering Potion of Milk",
   "block.milk-lib.milk_fluid_block": "Milk",

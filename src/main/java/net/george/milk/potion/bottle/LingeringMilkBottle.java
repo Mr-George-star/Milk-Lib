@@ -10,9 +10,9 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.stat.Stats;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
-import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
 
 import java.util.List;
@@ -23,14 +23,14 @@ public class LingeringMilkBottle extends LingeringPotionItem {
 	}
 
 	@Override
-	public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
+	public ActionResult use(World world, PlayerEntity user, Hand hand) {
 		world.playSound(null, user.getX(), user.getY(), user.getZ(),
 				SoundEvents.ENTITY_LINGERING_POTION_THROW, SoundCategory.NEUTRAL,
 				0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
 
 		ItemStack itemStack = user.getStackInHand(hand);
 		if (!world.isClient) {
-			PotionEntity potionEntity = new PotionEntity(world, user);
+			PotionEntity potionEntity = new PotionEntity(world, user, itemStack);
 			potionEntity.setItem(itemStack);
 			potionEntity.setVelocity(user, user.getPitch(), user.getYaw(), -20.0F, 0.5F, 1.0F);
 			((PotionItemEntityExtensions) potionEntity).setMilk(true);
@@ -42,16 +42,11 @@ public class LingeringMilkBottle extends LingeringPotionItem {
 			itemStack.decrement(1);
 		}
 
-		return TypedActionResult.success(itemStack, world.isClient());
+		return ActionResult.SUCCESS.withNewHandStack(itemStack);
 	}
 
 	@Override
 	public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
 		tooltip.add(Text.translatable("item.milk-lib.lingering_milk_bottle.tooltip").formatted(Formatting.GRAY));
-	}
-
-	@Override
-	public String getTranslationKey(ItemStack stack) {
-		return getTranslationKey();
 	}
 }

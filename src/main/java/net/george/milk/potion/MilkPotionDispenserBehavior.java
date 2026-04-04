@@ -27,7 +27,7 @@ public enum MilkPotionDispenserBehavior implements DispenserBehavior {
 				Position position = DispenserBlock.getOutputLocation(pointer);
 				float power = 0.88F;
 				float uncertainty = 3F;
-				ProjectileEntity projectileEntity = Util.make(new PotionEntity(world, position.getX(), position.getY(), position.getZ()), entity -> {
+				ProjectileEntity projectileEntity = Util.make(new PotionEntity(world, position.getX(), position.getY(), position.getZ(), stack), entity -> {
 					entity.setItem(stack);
 					((PotionItemEntityExtensions) entity).setMilk(true);
 				});

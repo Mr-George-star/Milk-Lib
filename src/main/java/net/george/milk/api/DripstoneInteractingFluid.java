@@ -28,7 +28,7 @@ public interface DripstoneInteractingFluid {
 
     /**
      * The color, in integer form, of the particle created by this fluid.
-     * tip: use hex codes! ex. 0xFFFFFF for white.
+     * Tip: use hex codes! Ex. 0xFFFFFF for white.
      */
     int getParticleColor(World world, double x, double y, double z, double velocityX, double velocityY, double velocityZ);
 

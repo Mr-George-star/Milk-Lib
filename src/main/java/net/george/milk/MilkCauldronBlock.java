@@ -3,28 +3,24 @@ package net.george.milk;
 import com.google.common.collect.Lists;
 import net.minecraft.block.*;
 import net.minecraft.block.cauldron.CauldronBehavior;
-import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.DyedColorComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.item.*;
-import net.minecraft.registry.tag.ItemTags;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.stat.Stats;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Hand;
-import net.minecraft.util.ItemActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldView;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.event.GameEvent;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 
 public class MilkCauldronBlock extends LeveledCauldronBlock {
 	static final CauldronBehavior.CauldronBehaviorMap MILK_CAULDRON_BEHAVIOR = CauldronBehavior.createMap("milk");
@@ -33,15 +29,13 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 	static final CauldronBehavior EMPTY_TO_BUCKET = (state, world, pos, player, hand, stack) ->
 			CauldronBehavior.emptyCauldron(state, world, pos, player, hand, stack, new ItemStack(Items.MILK_BUCKET), blockState -> blockState.get(LEVEL) == 3, SoundEvents.ITEM_BUCKET_FILL);
 	static final CauldronBehavior MILKIFY_DYEABLE_ITEM = (state, world, pos, player, hand, stack) -> {
-		if (stack.contains(DataComponentTypes.DYED_COLOR)) {
-			if (!world.isClient) {
-				DyedColorComponent.setColor(stack, Lists.newArrayList(DyeItem.byColor(DyeColor.WHITE)));
-				player.incrementStat(Stats.CLEAN_ARMOR);
-				LeveledCauldronBlock.decrementFluidLevel(state, world, pos);
-			}
-			return ItemActionResult.success(world.isClient);
+		if (!world.isClient) {
+			player.setStackInHand(hand, DyedColorComponent.setColor(stack, Lists.newArrayList(DyeItem.byColor(DyeColor.WHITE))));
+			player.incrementStat(Stats.CLEAN_ARMOR);
+			LeveledCauldronBlock.decrementFluidLevel(state, world, pos);
+			return ActionResult.SUCCESS;
 		}
-		return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+		return ActionResult.PASS_TO_DEFAULT_BLOCK_ACTION;
 	};
 	static final CauldronBehavior MILKIFY_SHULKER_BOX = (state, world, pos, player, hand, stack) -> {
 		Block block = Block.getBlockFromItem(stack.getItem());
@@ -52,9 +46,9 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 				player.incrementStat(Stats.CLEAN_SHULKER_BOX);
 				LeveledCauldronBlock.decrementFluidLevel(state, world, pos);
 			}
-			return ItemActionResult.success(world.isClient);
+			return ActionResult.SUCCESS;
 		}
-		return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+		return ActionResult.PASS_TO_DEFAULT_BLOCK_ACTION;
 	};
 	static final CauldronBehavior MILKIFY_BANNER = (state, world, pos, player, hand, stack) -> {
 		if (!world.isClient()) {
@@ -74,39 +68,12 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 			player.incrementStat(Stats.CLEAN_BANNER);
 			LeveledCauldronBlock.decrementFluidLevel(state, world, pos);
 		}
-		return ItemActionResult.success(world.isClient());
+		return ActionResult.SUCCESS;
 	};
 
 	public MilkCauldronBlock(Settings settings) {
-		super(Biome.Precipitation.NONE, getMilkCauldronBehaviors(), settings);
-	}
+		super(Biome.Precipitation.NONE, MILK_CAULDRON_BEHAVIOR, settings);
 
-	private static CauldronBehavior.CauldronBehaviorMap getMilkCauldronBehaviors() {
-		for (Field field : Items.class.getDeclaredFields()) {
-			try {
-				if (Modifier.isStatic(field.getModifiers())) {
-					Object obj = field.get(null);
-					if (obj instanceof Item item) {
-						if (item.getDefaultStack().isIn(ItemTags.DYEABLE)) {
-							MILK_CAULDRON_BEHAVIOR.map().put(item, MilkCauldronBlock.MILKIFY_DYEABLE_ITEM);
-						} else if (item instanceof BannerItem) {
-							MILK_CAULDRON_BEHAVIOR.map().put(item, MilkCauldronBlock.MILKIFY_BANNER);
-						} else if (item instanceof BlockItem blockItem) {
-							if (blockItem.getBlock() instanceof ShulkerBoxBlock) {
-								MILK_CAULDRON_BEHAVIOR.map().put(item, MilkCauldronBlock.MILKIFY_SHULKER_BOX);
-							}
-						}
-					}
-				}
-			} catch (IllegalAccessException exception) {
-				throw new RuntimeException(exception);
-			}
-		}
-
-		MILK_CAULDRON_BEHAVIOR.map().put(Items.MILK_BUCKET, FILL_FROM_BUCKET);
-		MILK_CAULDRON_BEHAVIOR.map().put(Items.BUCKET, EMPTY_TO_BUCKET);
-
-		return MILK_CAULDRON_BEHAVIOR;
 	}
 
 	@Override
@@ -116,7 +83,7 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 
 	@Override
 	public void onEntityCollision(BlockState state, World world, BlockPos pos, Entity entity) {
-		if (!world.isClient && isEntityTouchingFluid(state, pos, entity) && entity.canModifyAt(world, pos)) {
+		if (!world.isClient && isEntityTouchingFluid(state, pos, entity) && entity.canModifyAt((ServerWorld) world, pos)) {
 			boolean shouldDrain = false;
 			if (entity.isOnFire()) {
 				entity.extinguish();
@@ -138,10 +105,8 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 		return Items.CAULDRON.getDefaultStack();
 	}
 
-	public static CauldronBehavior addBehavior(CauldronBehavior behavior, Item... items) {
-		for (Item item : items) {
-			MILK_CAULDRON_BEHAVIOR.map().put(item, behavior);
-		}
+	public static CauldronBehavior addBehavior(CauldronBehavior behavior, Item items) {
+		MILK_CAULDRON_BEHAVIOR.map().put(items, behavior);
 		return behavior;
 	}
 
@@ -166,7 +131,7 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 
 	public record OutputToItemCauldronBehavior(ItemStack toFill, ItemStack filled, boolean ignoreComponent) implements CauldronBehavior {
 		@Override
-		public ItemActionResult interact(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, ItemStack held) {
+		public ActionResult interact(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, ItemStack held) {
 			if (!world.isClient && typeAndDataEqual(held, this.toFill, this.ignoreComponent)) {
 				Item item = held.getItem();
 				player.setStackInHand(hand, ItemUsage.exchangeStack(held, player, this.filled.copy()));
@@ -176,13 +141,13 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 				world.playSound(null, pos, SoundEvents.ITEM_BOTTLE_FILL, SoundCategory.BLOCKS, 1.0F, 1.0F);
 				world.emitGameEvent(null, GameEvent.FLUID_PICKUP, pos);
 			}
-			return ItemActionResult.success(world.isClient);
+			return ActionResult.SUCCESS;
 		}
 	}
 
 	public record InputToCauldronCauldronBehavior(ItemStack toEmpty, ItemStack emptied, boolean ignoreComponent) implements CauldronBehavior {
 		@Override
-		public ItemActionResult interact(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, ItemStack stack) {
+		public ActionResult interact(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, ItemStack stack) {
 			Block block = state.getBlock();
 			if ((block == Blocks.CAULDRON || block == MilkLib.MILK_CAULDRON) && (!state.contains(LEVEL) || state.get(LEVEL) != 3) && typeAndDataEqual(stack, this.toEmpty, this.ignoreComponent)) {
 				if (!world.isClient) {
@@ -197,9 +162,9 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 					world.playSound(null, pos, SoundEvents.ITEM_BOTTLE_EMPTY, SoundCategory.BLOCKS, 1.0F, 1.0F);
 					world.emitGameEvent(null, GameEvent.FLUID_PLACE, pos);
 				}
-				return ItemActionResult.success(world.isClient);
+				return ActionResult.SUCCESS;
 			}
-			return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+			return ActionResult.PASS_TO_DEFAULT_BLOCK_ACTION;
 		}
 	}
 }
