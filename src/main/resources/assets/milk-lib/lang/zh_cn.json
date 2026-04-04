@@ -1,5 +1,6 @@
 {
   "block.milk-lib.milk_cauldron": "装有奶的炼药锅",
+  "item.milk-lib.milk_bottle": "奶瓶",
   "item.milk-lib.milk_bottle.effect.water": "奶瓶",
   "item.milk-lib.splash_milk_bottle": "喷溅型奶瓶",
   "item.milk-lib.lingering_milk_bottle": "滞留型奶瓶",
