@@ -65,18 +65,17 @@ public class MilkLib implements ModInitializer {
 					.registryKey(RegistryKey.of(RegistryKeys.BLOCK, id("milk_cauldron")))));
 
 	// item registries
-	public static Item MILK_BOTTLE = Registry.register(Registries.ITEM, id("milk_bottle"),
-			new MilkBottle(new Item.Settings().recipeRemainder(Items.GLASS_BOTTLE)
+	public static Item MILK_BOTTLE = registerItem("milk_bottle", MilkBottle::new,
+			new Item.Settings()
+					.recipeRemainder(Items.GLASS_BOTTLE)
 					.maxCount(1)
 					.component(DataComponentTypes.CONSUMABLE, ConsumableComponent.builder()
 							.consumeSeconds(1.6F).useAction(UseAction.DRINK).sound(SoundEvents.ENTITY_GENERIC_DRINK)
-							.finishSound(SoundEvents.ENTITY_GENERIC_DRINK).consumeParticles(false).build())
-					.registryKey(RegistryKey.of(RegistryKeys.ITEM, id("milk_bottle")))));
+							.finishSound(SoundEvents.ENTITY_GENERIC_DRINK).consumeParticles(false).build()));
 	public static Item SPLASH_MILK_BOTTLE = registerItem("splash_milk_bottle", SplashMilkBottle::new,
 			new Item.Settings().maxCount(1));
-	public static Item LINGERING_MILK_BOTTLE = Registry.register(Registries.ITEM, id("lingering_milk_bottle"),
-			new LingeringMilkBottle(new Item.Settings().maxCount(1)
-					.registryKey(RegistryKey.of(RegistryKeys.ITEM, id("lingering_milk_bottle")))));
+	public static Item LINGERING_MILK_BOTTLE = registerItem("lingering_milk_bottle", LingeringMilkBottle::new,
+			new Item.Settings().maxCount(1));
 
 	// entity registries
 	public static EntityType<MilkAreaEffectCloudEntity> MILK_EFFECT_CLOUD_ENTITY_TYPE = Registry.register(
