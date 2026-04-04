@@ -19,9 +19,6 @@
 		],
 		"client": [
 			"net.george.milk.MilkLibClient"
-		],
-		"fabric-datagen": [
-			"net.george.milk.MilkLibDataGenerator"
 		]
 	},
 	"mixins": [

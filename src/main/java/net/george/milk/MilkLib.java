@@ -1,6 +1,7 @@
 package net.george.milk;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.registry.FabricBrewingRecipeRegistryBuilder;
 import net.fabricmc.fabric.api.transfer.v1.fluid.CauldronFluidContent;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants;
@@ -24,9 +25,11 @@ import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.fluid.FlowableFluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroups;
 import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
@@ -38,6 +41,9 @@ import static net.minecraft.item.Items.*;
 public class MilkLib implements ModInitializer {
 	public static final String MOD_ID = "milk-lib";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
+	// tags
+	public static final TagKey<Block> MILK_PLACEMENT_DISALLOWED = TagKey.of(RegistryKeys.BLOCK, id("milk_placement_disallowed"));
 
 	// fluid registries
 	public static FlowableFluid STILL_MILK = Registry.register(Registries.FLUID, id("still_milk"), new MilkFluid.Still());
@@ -87,7 +93,7 @@ public class MilkLib implements ModInitializer {
 				new FullItemFluidStorage(context, bottle -> ItemVariant.of(GLASS_BOTTLE), FluidVariant.of(STILL_MILK), FluidConstants.BOTTLE));
 
 		CauldronFluidContent.registerCauldron(MILK_CAULDRON, STILL_MILK, FluidConstants.BOTTLE, LeveledCauldronBlock.LEVEL);
-		// fill into empty behaviours
+		// fill into empty behaviors
 		CauldronBehavior.EMPTY_CAULDRON_BEHAVIOR.map().put(MILK_BUCKET, MilkCauldronBlock.FILL_FROM_BUCKET);
 		CauldronBehavior fillFromMilkBottle = MilkCauldronBlock.addInputToCauldronExchange(
 				MILK_BOTTLE.getDefaultStack(), Items.GLASS_BOTTLE.getDefaultStack(), true);
@@ -104,6 +110,11 @@ public class MilkLib implements ModInitializer {
 		FabricBrewingRecipeRegistryBuilder.BUILD.register(builder -> {
 			builder.registerItemRecipe(MILK_BOTTLE, GUNPOWDER, SPLASH_MILK_BOTTLE);
 			builder.registerItemRecipe(SPLASH_MILK_BOTTLE, DRAGON_BREATH, LINGERING_MILK_BOTTLE);
+		});
+		ItemGroupEvents.modifyEntriesEvent(ItemGroups.FOOD_AND_DRINK).register(entries -> {
+			entries.add(MILK_BOTTLE);
+			entries.add(SPLASH_MILK_BOTTLE);
+			entries.add(LINGERING_MILK_BOTTLE);
 		});
 	}
 

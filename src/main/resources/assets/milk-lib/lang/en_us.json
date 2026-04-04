@@ -5,5 +5,8 @@
   "item.milk-lib.lingering_milk_bottle": "Lingering Potion of Milk",
   "block.milk-lib.milk_fluid_block": "Milk",
   "fluid.milk-lib.still_milk": "Milk",
-  "fluid.milk-lib.flowing_milk": "Milk"
+  "fluid.milk-lib.flowing_milk": "Milk",
+  "item.milk-lib.milk_bottle.tooltip": "Remove all effects!",
+  "item.milk-lib.splash_milk_bottle.tooltip": "Spawn a short-lived cloud that can remove all effects!",
+  "item.milk-lib.lingering_milk_bottle.tooltip": "Spawn a long-lived cloud that can remove all effects!"
 }

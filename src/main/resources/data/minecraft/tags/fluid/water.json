@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "milk-lib:flowing_milk",
+    "milk-lib:still_milk"
+  ]
+}

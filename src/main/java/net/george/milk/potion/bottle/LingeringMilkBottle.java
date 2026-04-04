@@ -10,6 +10,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.stat.Stats;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
@@ -46,6 +47,7 @@ public class LingeringMilkBottle extends LingeringPotionItem {
 
 	@Override
 	public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
+		tooltip.add(Text.translatable("item.milk-lib.lingering_milk_bottle.tooltip").formatted(Formatting.GRAY));
 	}
 
 	@Override
