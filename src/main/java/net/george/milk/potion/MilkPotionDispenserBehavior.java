@@ -1,11 +1,14 @@
 package net.george.milk.potion;
 
+import com.mojang.datafixers.util.Function5;
 import net.george.milk.potion.bottle.PotionItemEntityExtensions;
 import net.minecraft.block.DispenserBlock;
 import net.minecraft.block.dispenser.DispenserBehavior;
 import net.minecraft.block.dispenser.ItemDispenserBehavior;
 import net.minecraft.entity.projectile.ProjectileEntity;
+import net.minecraft.entity.projectile.thrown.LingeringPotionEntity;
 import net.minecraft.entity.projectile.thrown.PotionEntity;
+import net.minecraft.entity.projectile.thrown.SplashPotionEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPointer;
@@ -15,7 +18,14 @@ import net.minecraft.world.World;
 
 @SuppressWarnings("resource")
 public enum MilkPotionDispenserBehavior implements DispenserBehavior {
-	INSTANCE;
+	SPLASH(SplashPotionEntity::new),
+	LINGERING(LingeringPotionEntity::new);
+
+	final Function5<World, Double, Double, Double, ItemStack, PotionEntity> potionFactory;
+
+	MilkPotionDispenserBehavior(Function5<World, Double, Double, Double, ItemStack, PotionEntity> potionFactory) {
+		this.potionFactory = potionFactory;
+	}
 
 	@Override
 	public ItemStack dispense(BlockPointer blockPointer, ItemStack itemStack) {
@@ -27,7 +37,7 @@ public enum MilkPotionDispenserBehavior implements DispenserBehavior {
 				Position position = DispenserBlock.getOutputLocation(pointer);
 				float power = 0.88F;
 				float uncertainty = 3F;
-				ProjectileEntity projectileEntity = Util.make(new PotionEntity(world, position.getX(), position.getY(), position.getZ(), stack), entity -> {
+				ProjectileEntity projectileEntity = Util.make(potionFactory.apply(world, position.getX(), position.getY(), position.getZ(), stack), entity -> {
 					entity.setItem(stack);
 					((PotionItemEntityExtensions) entity).setMilk(true);
 				});

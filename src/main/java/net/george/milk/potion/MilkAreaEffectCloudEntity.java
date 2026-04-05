@@ -65,7 +65,7 @@ public class MilkAreaEffectCloudEntity extends AreaEffectCloudEntity {
 					u = ((float)(o & 0xFF) / 255.0F);
 				}
 
-				this.getWorld().addImportantParticle(particleEffect, d, e, n, s, t, u);
+				this.getWorld().addImportantParticleClient(particleEffect, d, e, n, s, t, u);
 			}
 		} else {
 			if (this.age >= getWaitTime() + getDuration()) {

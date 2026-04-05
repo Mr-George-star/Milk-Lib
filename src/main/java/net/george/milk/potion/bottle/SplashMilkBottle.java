@@ -3,20 +3,16 @@ package net.george.milk.potion.bottle;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.thrown.PotionEntity;
+import net.minecraft.entity.projectile.thrown.SplashPotionEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.SplashPotionItem;
-import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.stat.Stats;
-import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
-
-import java.util.List;
 
 public class SplashMilkBottle extends SplashPotionItem {
 	public SplashMilkBottle(Item.Settings settings) {
@@ -31,7 +27,7 @@ public class SplashMilkBottle extends SplashPotionItem {
 
 		ItemStack itemStack = user.getStackInHand(hand);
 		if (!world.isClient) {
-			PotionEntity potionEntity = new PotionEntity(world, user, itemStack);
+			PotionEntity potionEntity = new SplashPotionEntity(world, user, itemStack);
 			potionEntity.setItem(itemStack);
 			potionEntity.setVelocity(user, user.getPitch(), user.getYaw(), -20.0F, 0.5F, 1.0F);
 			((PotionItemEntityExtensions) potionEntity).setMilk(true);
@@ -44,11 +40,6 @@ public class SplashMilkBottle extends SplashPotionItem {
 		}
 
 		return ActionResult.SUCCESS.withNewHandStack(itemStack);
-	}
-
-	@Override
-	public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
-		tooltip.add(Text.translatable("item.milk-lib.splash_milk_bottle.tooltip").formatted(Formatting.GRAY));
 	}
 
 	@Override

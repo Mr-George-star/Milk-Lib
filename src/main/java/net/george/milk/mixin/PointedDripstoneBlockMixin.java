@@ -128,7 +128,7 @@ public abstract class PointedDripstoneBlockMixin {
         } else {
             particleEffect = dripFluid.getDefaultState().isIn(FluidTags.LAVA) ? ParticleTypes.DRIPPING_DRIPSTONE_LAVA : ParticleTypes.DRIPPING_DRIPSTONE_WATER;
         }
-        world.addParticle(particleEffect, x, y, z, 0.0, 0.0, 0.0);
+        world.addParticleClient(particleEffect, x, y, z, 0.0, 0.0, 0.0);
     }
 
     /**

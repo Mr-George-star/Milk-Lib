@@ -55,7 +55,7 @@ public abstract class MilkBucketItemMixin implements FluidModificationItem {
 		BlockPos hitPos = hitResult.getBlockPos();
 		Direction side = hitResult.getSide();
 		BlockPos placePos = hitPos.offset(side);
-		if (!world.canPlayerModifyAt(user, hitPos) || !user.canPlaceOn(placePos, side, stack)) {
+		if (!world.canEntityModifyAt(user, hitPos) || !user.canPlaceOn(placePos, side, stack)) {
 			cir.setReturnValue(ActionResult.FAIL);
 			return;
 		}
@@ -95,7 +95,7 @@ public abstract class MilkBucketItemMixin implements FluidModificationItem {
 			int x = pos.getX(), y = pos.getY(), z = pos.getZ();
 			world.playSound(player, pos, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
 			for (int i = 0; i < 8; i++) {
-				world.addParticle(ParticleTypes.LARGE_SMOKE, x + Math.random(), y + Math.random(), z + Math.random(), 0.0, 0.0, 0.0);
+				world.addParticleClient(ParticleTypes.LARGE_SMOKE, x + Math.random(), y + Math.random(), z + Math.random(), 0.0, 0.0, 0.0);
 			}
 			return true;
 		}

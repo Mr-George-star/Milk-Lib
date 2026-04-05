@@ -1,6 +1,7 @@
 package net.george.milk;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.transfer.v1.fluid.CauldronFluidContent;
@@ -37,6 +38,8 @@ import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,8 +138,8 @@ public class MilkLib implements ModInitializer {
 				Items.GLASS_BOTTLE.getDefaultStack(), MILK_BOTTLE.getDefaultStack(), true);
 		MilkCauldronBlock.MILK_CAULDRON_BEHAVIOR.map().put(Items.GLASS_BOTTLE, emptyToBottle);
 
-		DispenserBlock.registerBehavior(SPLASH_MILK_BOTTLE, MilkPotionDispenserBehavior.INSTANCE);
-		DispenserBlock.registerBehavior(LINGERING_MILK_BOTTLE, MilkPotionDispenserBehavior.INSTANCE);
+		DispenserBlock.registerBehavior(SPLASH_MILK_BOTTLE, MilkPotionDispenserBehavior.SPLASH);
+		DispenserBlock.registerBehavior(LINGERING_MILK_BOTTLE, MilkPotionDispenserBehavior.LINGERING);
 		DispenserBlock.registerProjectileBehavior(MILK_ARROW);
 
 		/* events */
@@ -177,6 +180,16 @@ public class MilkLib implements ModInitializer {
 			});
 			MilkCauldronBlock.addBehavior(MilkCauldronBlock.FILL_FROM_BUCKET, Items.MILK_BUCKET);
 			MilkCauldronBlock.addBehavior(MilkCauldronBlock.EMPTY_TO_BUCKET, Items.BUCKET);
+		});
+
+		ItemTooltipCallback.EVENT.register((itemStack, tooltipContext, tooltipType, list) -> {
+			if (itemStack.isOf(MILK_BOTTLE)) {
+				list.add(Text.translatable("item.milk-lib.milk_bottle.tooltip").formatted(Formatting.GRAY));
+			} else if (itemStack.isOf(SPLASH_MILK_BOTTLE)) {
+				list.add(Text.translatable("item.milk-lib.splash_milk_bottle.tooltip").formatted(Formatting.GRAY));
+			} else if (itemStack.isOf(LINGERING_MILK_BOTTLE)) {
+				list.add(Text.translatable("item.milk-lib.lingering_milk_bottle.tooltip").formatted(Formatting.GRAY));
+			}
 		});
 	}
 

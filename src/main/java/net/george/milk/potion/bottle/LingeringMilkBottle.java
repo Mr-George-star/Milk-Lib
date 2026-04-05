@@ -2,21 +2,17 @@ package net.george.milk.potion.bottle;
 
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.projectile.thrown.LingeringPotionEntity;
 import net.minecraft.entity.projectile.thrown.PotionEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.LingeringPotionItem;
-import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.stat.Stats;
-import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
-
-import java.util.List;
 
 public class LingeringMilkBottle extends LingeringPotionItem {
 	public LingeringMilkBottle(Item.Settings settings) {
@@ -31,7 +27,7 @@ public class LingeringMilkBottle extends LingeringPotionItem {
 
 		ItemStack itemStack = user.getStackInHand(hand);
 		if (!world.isClient) {
-			PotionEntity potionEntity = new PotionEntity(world, user, itemStack);
+			PotionEntity potionEntity = new LingeringPotionEntity(world, user, itemStack);
 			potionEntity.setItem(itemStack);
 			potionEntity.setVelocity(user, user.getPitch(), user.getYaw(), -20.0F, 0.5F, 1.0F);
 			((PotionItemEntityExtensions) potionEntity).setMilk(true);
@@ -44,11 +40,6 @@ public class LingeringMilkBottle extends LingeringPotionItem {
 		}
 
 		return ActionResult.SUCCESS.withNewHandStack(itemStack);
-	}
-
-	@Override
-	public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
-		tooltip.add(Text.translatable("item.milk-lib.lingering_milk_bottle.tooltip").formatted(Formatting.GRAY));
 	}
 
 	@Override

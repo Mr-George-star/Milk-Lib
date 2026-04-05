@@ -37,7 +37,7 @@ public class MilkArrowEntity extends PersistentProjectileEntity {
     public void tick() {
         super.tick();
         if (this.getWorld().isClient && !this.isInGround()) {
-            this.getWorld().addParticle(ParticleTypes.INSTANT_EFFECT, this.getX(), this.getY(), this.getZ(),
+            this.getWorld().addParticleClient(ParticleTypes.INSTANT_EFFECT, this.getX(), this.getY(), this.getZ(),
                     0.0, 0.0, 0.0);
         }
     }
