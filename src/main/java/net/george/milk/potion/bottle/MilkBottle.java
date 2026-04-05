@@ -2,6 +2,7 @@ package net.george.milk.potion.bottle;
 
 import net.george.milk.MilkLib;
 import net.minecraft.advancement.criterion.Criteria;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -32,8 +33,8 @@ public class MilkBottle extends PotionItem {
 			Criteria.CONSUME_ITEM.trigger(player, stack);
 		}
 
-		if (!world.isClient) {
-			MilkLib.tryRemoveRandomEffect(user);
+		if (!world.isClient && !user.hasStatusEffect(MilkLib.RANDOM_PURGE)) {
+			user.addStatusEffect(MilkLib.createRandomPurgeEffect());
 		}
 
 		if (playerEntity != null) {
@@ -67,7 +68,10 @@ public class MilkBottle extends PotionItem {
 		tooltip.add(Text.translatable("item.milk-lib.milk_bottle.tooltip").formatted(Formatting.GRAY));
 	}
 
-	public String getTranslationKey(ItemStack stack) {
-		return this.getTranslationKey();
+	@Override
+	public ItemStack getDefaultStack() {
+		ItemStack stack = super.getDefaultStack();
+		stack.remove(DataComponentTypes.POTION_CONTENTS);
+		return stack;
 	}
 }

@@ -9,5 +9,7 @@
   "fluid.milk-lib.flowing_milk": "奶",
   "item.milk-lib.milk_bottle.tooltip": "去除所有效果!",
   "item.milk-lib.splash_milk_bottle.tooltip": "生成一个短效可去除所有效果的云",
-  "item.milk-lib.lingering_milk_bottle.tooltip": "生成一个长效可去除所有效果的云"
+  "item.milk-lib.lingering_milk_bottle.tooltip": "生成一个长效可去除所有效果的云",
+  "item.milk-lib.milk_arrow": "奶箭",
+  "effect.milk-lib.random_purge": "随机净化"
 }

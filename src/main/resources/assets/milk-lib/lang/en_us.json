@@ -9,5 +9,7 @@
   "fluid.milk-lib.flowing_milk": "Milk",
   "item.milk-lib.milk_bottle.tooltip": "Remove all effects!",
   "item.milk-lib.splash_milk_bottle.tooltip": "Spawn a short-lived cloud that can remove all effects!",
-  "item.milk-lib.lingering_milk_bottle.tooltip": "Spawn a long-lived cloud that can remove all effects!"
+  "item.milk-lib.lingering_milk_bottle.tooltip": "Spawn a long-lived cloud that can remove all effects!",
+  "item.milk-lib.milk_arrow": "Milk Arrow",
+  "effect.milk-lib.random_purge": "Random Purge"
 }

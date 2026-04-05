@@ -15,13 +15,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@SuppressWarnings("DiscouragedShift")
 @Environment(EnvType.CLIENT)
 @Mixin(MinecraftClient.class)
 public abstract class MinecraftClientMixin {
     @Shadow @Final public ParticleManager particleManager;
 
-    @Inject(at = @At(value = "INVOKE", shift = At.Shift.BY, by = 2, target = "Lnet/minecraft/client/particle/ParticleManager;<init>(Lnet/minecraft/client/world/ClientWorld;Lnet/minecraft/client/texture/TextureManager;)V"), method = "<init>")
+    @Inject(at = @At(value = "TAIL", target = "Lnet/minecraft/client/particle/ParticleManager;<init>(Lnet/minecraft/client/world/ClientWorld;Lnet/minecraft/client/texture/TextureManager;)V"), method = "<init>")
     private void milkLib$handleParticles(RunArgs args, CallbackInfo ci) {
         Constants.TO_REGISTER.forEach(fluid -> {
             ParticleTypeSet particles = Constants.FLUIDS_TO_PARTICLES.get(fluid);

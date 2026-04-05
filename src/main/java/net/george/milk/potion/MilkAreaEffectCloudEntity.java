@@ -95,7 +95,7 @@ public class MilkAreaEffectCloudEntity extends AreaEffectCloudEntity {
 			if (this.age % 5 == 0) {
 				getWorld().getOtherEntities(this, getBoundingBox().expand(2)).forEach(entity -> {
 					if (entity instanceof LivingEntity livingEntity) {
-						MilkLib.tryRemoveRandomEffect(livingEntity);
+						livingEntity.addStatusEffect(MilkLib.createRandomPurgeEffect());
 					}
 				});
 			}

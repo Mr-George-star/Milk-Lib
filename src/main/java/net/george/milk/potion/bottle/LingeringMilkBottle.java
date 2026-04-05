@@ -1,5 +1,6 @@
 package net.george.milk.potion.bottle;
 
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.thrown.PotionEntity;
 import net.minecraft.item.Item;
@@ -48,5 +49,12 @@ public class LingeringMilkBottle extends LingeringPotionItem {
 	@Override
 	public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
 		tooltip.add(Text.translatable("item.milk-lib.lingering_milk_bottle.tooltip").formatted(Formatting.GRAY));
+	}
+
+	@Override
+	public ItemStack getDefaultStack() {
+		ItemStack stack = super.getDefaultStack();
+		stack.remove(DataComponentTypes.POTION_CONTENTS);
+		return stack;
 	}
 }

@@ -88,10 +88,10 @@ public abstract class PotionEntityMixin extends ThrownItemEntity implements Flyi
             List<LivingEntity> list = this.getWorld().getNonSpectatingEntities(LivingEntity.class, box);
             if (!list.isEmpty()) {
                 for (LivingEntity livingEntity : list) {
-                    if (livingEntity.isAffectedBySplashPotions()) {
+                    if (livingEntity.isAffectedBySplashPotions() && !livingEntity.hasStatusEffect(MilkLib.RANDOM_PURGE)) {
                         double d = this.squaredDistanceTo(livingEntity);
                         if (d < 16.0) {
-                            MilkLib.tryRemoveRandomEffect(livingEntity);
+                            livingEntity.addStatusEffect(MilkLib.createRandomPurgeEffect());
                         }
                     }
                 }

@@ -3,6 +3,7 @@
   "package": "net.george.milk.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "BrewingStandBlockEntityMixin",
     "BrewingStandScreenHandlerPotionSlotMixin",
     "CauldronBlockMixin",
     "CowEntityMixin",

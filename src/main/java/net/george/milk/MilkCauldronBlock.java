@@ -101,7 +101,7 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 	}
 
 	@Override
-	public ItemStack getPickStack(WorldView world, BlockPos pos, BlockState state) {
+	protected ItemStack getPickStack(WorldView world, BlockPos pos, BlockState state, boolean includeData) {
 		return Items.CAULDRON.getDefaultStack();
 	}
 

@@ -3,7 +3,6 @@ package net.george.milk;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.fabricmc.fabric.api.registry.FabricBrewingRecipeRegistryBuilder;
 import net.fabricmc.fabric.api.transfer.v1.fluid.CauldronFluidContent;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
@@ -12,8 +11,7 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.base.EmptyItemFluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.base.FullItemFluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
 import net.fabricmc.fabric.impl.tag.convention.v2.TagRegistration;
-import net.george.milk.potion.MilkAreaEffectCloudEntity;
-import net.george.milk.potion.MilkPotionDispenserBehavior;
+import net.george.milk.potion.*;
 import net.george.milk.potion.bottle.LingeringMilkBottle;
 import net.george.milk.potion.bottle.MilkBottle;
 import net.george.milk.potion.bottle.SplashMilkBottle;
@@ -21,9 +19,11 @@ import net.minecraft.block.*;
 import net.minecraft.block.cauldron.CauldronBehavior;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.ConsumableComponent;
+import net.minecraft.component.type.PotionContentsComponent;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.SpawnGroup;
+import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.fluid.FlowableFluid;
 import net.minecraft.fluid.FluidState;
@@ -33,6 +33,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.sound.SoundEvents;
@@ -40,6 +41,7 @@ import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.function.Function;
 
 import static net.minecraft.item.Items.*;
@@ -76,6 +78,7 @@ public class MilkLib implements ModInitializer {
 			new Item.Settings().maxCount(1));
 	public static Item LINGERING_MILK_BOTTLE = registerItem("lingering_milk_bottle", LingeringMilkBottle::new,
 			new Item.Settings().maxCount(1));
+	public static Item MILK_ARROW = registerItem("milk_arrow", MilkArrowItem::new, new Item.Settings());
 
 	// entity registries
 	public static EntityType<MilkAreaEffectCloudEntity> MILK_EFFECT_CLOUD_ENTITY_TYPE = Registry.register(
@@ -87,6 +90,20 @@ public class MilkLib implements ModInitializer {
 					.trackingTickInterval(10)
 					.build(RegistryKey.of(RegistryKeys.ENTITY_TYPE, id("milk_area_effect_cloud")))
 	);
+	public static EntityType<MilkArrowEntity> MILK_ARROW_ENTITY_TYPE = Registry.register(
+			Registries.ENTITY_TYPE,
+			id("milk_arrow"),
+			EntityType.Builder.create(MilkArrowEntity::new, SpawnGroup.MISC)
+					.dimensions(0.5F, 0.5F)
+					.dropsNothing()
+					.dimensions(0.5F, 0.5F)
+					.eyeHeight(0.13F).maxTrackingRange(4).trackingTickInterval(20)
+					.build(RegistryKey.of(RegistryKeys.ENTITY_TYPE, id("milk_arrow")))
+	);
+
+	// effect & potion
+	public static final RegistryEntry.Reference<StatusEffect> RANDOM_PURGE = Registry
+			.registerReference(Registries.STATUS_EFFECT, id("random_purge"), new RandomPurgeEffect());
 
 	// extra conventional tag key for milk bottles
 	public static final TagKey<Item> MILK_BOTTLES = TagRegistration.ITEM_TAG.registerC("milk_bottle");
@@ -120,16 +137,30 @@ public class MilkLib implements ModInitializer {
 
 		DispenserBlock.registerBehavior(SPLASH_MILK_BOTTLE, MilkPotionDispenserBehavior.INSTANCE);
 		DispenserBlock.registerBehavior(LINGERING_MILK_BOTTLE, MilkPotionDispenserBehavior.INSTANCE);
+		DispenserBlock.registerProjectileBehavior(MILK_ARROW);
 
-		FabricBrewingRecipeRegistryBuilder.BUILD.register(builder -> {
-			builder.registerItemRecipe(MILK_BOTTLE, GUNPOWDER, SPLASH_MILK_BOTTLE);
-			builder.registerItemRecipe(SPLASH_MILK_BOTTLE, DRAGON_BREATH, LINGERING_MILK_BOTTLE);
-		});
+		/* events */
 		ItemGroupEvents.modifyEntriesEvent(ItemGroups.FOOD_AND_DRINK).register(entries -> {
+			entries.getDisplayStacks().removeIf(stack -> {
+				if (!(stack.getItem() instanceof PotionItem)) {
+					return false;
+				}
+				PotionContentsComponent component = stack.get(DataComponentTypes.POTION_CONTENTS);
+				if (component == null) {
+					return false;
+				}
+
+				return component.potion()
+						.map(entry -> Registries.POTION.getId(entry.value()))
+						.map(id -> id.getNamespace().equals(MOD_ID))
+						.orElse(false);
+			});
 			entries.add(MILK_BOTTLE);
 			entries.add(SPLASH_MILK_BOTTLE);
 			entries.add(LINGERING_MILK_BOTTLE);
 		});
+		ItemGroupEvents.modifyEntriesEvent(ItemGroups.COMBAT).register(entries ->
+				entries.add(MILK_ARROW));
 
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
 			Registries.ITEM.forEach(item -> {
@@ -162,13 +193,28 @@ public class MilkLib implements ModInitializer {
 	}
 
 	public static boolean tryRemoveRandomEffect(LivingEntity user) {
+		if (user.getWorld().isClient) {
+			return false;
+		}
+
 		if (!user.getStatusEffects().isEmpty()) {
-			int indexOfEffectToRemove = user.getWorld().random.nextInt(user.getStatusEffects().size());
-			StatusEffectInstance effectToRemove = (StatusEffectInstance) user.getStatusEffects().toArray()[indexOfEffectToRemove];
-			user.removeStatusEffect(effectToRemove.getEffectType());
+			int index = user.getWorld().random.nextInt(user.getStatusEffects().size());
+			StatusEffectInstance effect = (StatusEffectInstance) user.getStatusEffects().toArray()[index];
+			List<StatusEffectInstance> otherEffects = user.getStatusEffects().stream()
+					.filter(instance -> instance.getEffectType() != RANDOM_PURGE).toList();
+			if (otherEffects.isEmpty()) {
+				return false;
+			}
+			int randomIndex = user.getWorld().random.nextInt(otherEffects.size());
+			StatusEffectInstance toRemove = otherEffects.get(randomIndex);
+			user.removeStatusEffect(toRemove.getEffectType());
 			return true;
 		}
 		return false;
+	}
+
+	public static StatusEffectInstance createRandomPurgeEffect() {
+		return new StatusEffectInstance(RANDOM_PURGE, 10);
 	}
 
 	public static Identifier id(String name) {
