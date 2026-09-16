@@ -1,13 +1,13 @@
 package net.george.milk;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandler;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.fabricmc.fabric.api.client.render.fluid.v1.SimpleFluidRenderHandler;
+import net.fabricmc.fabric.api.client.rendering.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.george.milk.potion.MilkArrowEntityRenderer;
-import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.BlockRenderLayer;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.util.Identifier;
 
@@ -15,7 +15,7 @@ public class MilkLibClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         setupFluidRendering(MilkLib.STILL_MILK, MilkLib.FLOWING_MILK, MilkLib.id("milk"));
-        BlockRenderLayerMap.INSTANCE.putFluids(RenderLayer.getTranslucent(), MilkLib.STILL_MILK, MilkLib.FLOWING_MILK);
+        BlockRenderLayerMap.putFluids(BlockRenderLayer.TRANSLUCENT, MilkLib.STILL_MILK, MilkLib.FLOWING_MILK);
 
         EntityRendererRegistry.register(MilkLib.MILK_ARROW_ENTITY_TYPE, MilkArrowEntityRenderer::new);
     }

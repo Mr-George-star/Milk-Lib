@@ -2,13 +2,13 @@ package net.george.milk.mixin;
 
 import net.george.milk.MilkLib;
 import net.george.milk.potion.bottle.PotionItemEntityExtensions;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.projectile.thrown.PotionEntity;
 import net.minecraft.entity.projectile.thrown.SplashPotionEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -30,7 +30,7 @@ public abstract class SplashPotionEntityMixin extends PotionEntity implements Po
     }
 
     @Inject(at = @At("HEAD"), method = "spawnAreaEffectCloud", cancellable = true)
-    private void milkLib$spawnAreaEffectCloud(ServerWorld world, ItemStack stack, Entity entityHit, CallbackInfo ci) {
+    private void milkLib$spawnAreaEffectCloud(ServerWorld world, ItemStack stack, HitResult hitResult, CallbackInfo ci) {
         if (this.isMilk()) {
             Box box = this.getBoundingBox().expand(4.0, 2.0, 4.0);
             List<LivingEntity> list = this.getWorld().getNonSpectatingEntities(LivingEntity.class, box);

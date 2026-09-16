@@ -84,7 +84,7 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 
 	@Override
 	protected void onEntityCollision(BlockState state, World world, BlockPos pos, Entity entity, EntityCollisionHandler handler) {
-		if (!world.isClient && isEntityTouchingFluid(state, pos, entity) && entity.canModifyAt((ServerWorld) world, pos)) {
+		if (!world.isClient && this.isEntityTouchingFluid(state, pos, entity) && entity.canModifyAt((ServerWorld) world, pos)) {
 			boolean shouldDrain = false;
 			if (entity.isOnFire()) {
 				entity.extinguish();
@@ -99,6 +99,10 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 				decrementFluidLevel(state, world, pos);
 			}
 		}
+	}
+
+	protected boolean isEntityTouchingFluid(BlockState state, BlockPos pos, Entity entity) {
+		return entity.getY() < (double) pos.getY() + this.getFluidHeight(state) && entity.getBoundingBox().maxY > (double) pos.getY() + 0.25;
 	}
 
 	@Override
