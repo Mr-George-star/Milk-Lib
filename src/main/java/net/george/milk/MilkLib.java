@@ -13,6 +13,8 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.base.EmptyItemFluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.base.FullItemFluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
 import net.fabricmc.fabric.impl.tag.convention.v2.TagRegistration;
+import net.george.milk.api.DrippableFluidManager;
+import net.george.milk.api.ParticleTypeSet;
 import net.george.milk.potion.*;
 import net.george.milk.potion.bottle.LingeringMilkBottle;
 import net.george.milk.potion.bottle.MilkBottle;
@@ -27,7 +29,6 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.fluid.FlowableFluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.item.*;
 import net.minecraft.item.consume.UseAction;
@@ -59,8 +60,10 @@ public class MilkLib implements ModInitializer {
 	public static final TagKey<Block> MILK_PLACEMENT_DISALLOWED = TagKey.of(RegistryKeys.BLOCK, id("milk_placement_disallowed"));
 
 	// fluid registries
-	public static FlowableFluid STILL_MILK = Registry.register(Registries.FLUID, id("still_milk"), new MilkFluid.Still());
-	public static FlowableFluid FLOWING_MILK = Registry.register(Registries.FLUID, id("flowing_milk"), new MilkFluid.Flowing());
+	public static MilkFluid STILL_MILK = Registry.register(Registries.FLUID, id("still_milk"), new MilkFluid.Still());
+	public static MilkFluid FLOWING_MILK = Registry.register(Registries.FLUID, id("flowing_milk"), new MilkFluid.Flowing());
+	public static ParticleTypeSet STILL_MILK_PARTICLES;
+	public static ParticleTypeSet FLOWING_MILK_PARTICLES;
 
 	// block registries
 	public static Block MILK_FLUID_BLOCK = Registry.register(Registries.BLOCK, id("milk_fluid_block"),
@@ -114,6 +117,10 @@ public class MilkLib implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		DrippableFluidManager.Register register = DrippableFluidManager.getInstance().get(MOD_ID);
+		STILL_MILK_PARTICLES = register.register("still_milk", STILL_MILK);
+		FLOWING_MILK_PARTICLES = register.register("flowing_milk", FLOWING_MILK);
+
 		FluidStorage.combinedItemApiProvider(MILK_BUCKET).register(context ->
 				new FullItemFluidStorage(context, bucket -> ItemVariant.of(BUCKET), FluidVariant.of(STILL_MILK), FluidConstants.BUCKET));
 		FluidStorage.combinedItemApiProvider(BUCKET).register(context ->
@@ -214,24 +221,16 @@ public class MilkLib implements ModInitializer {
 	}
 
 	public static boolean tryRemoveRandomEffect(LivingEntity user) {
-		if (user.getWorld().isClient) {
+		if (user.getEntityWorld().isClient()) {
 			return false;
 		}
-
-		if (!user.getStatusEffects().isEmpty()) {
-			int index = user.getWorld().random.nextInt(user.getStatusEffects().size());
-			StatusEffectInstance effect = (StatusEffectInstance) user.getStatusEffects().toArray()[index];
-			List<StatusEffectInstance> otherEffects = user.getStatusEffects().stream()
-					.filter(instance -> instance.getEffectType() != RANDOM_PURGE).toList();
-			if (otherEffects.isEmpty()) {
-				return false;
-			}
-			int randomIndex = user.getWorld().random.nextInt(otherEffects.size());
-			StatusEffectInstance toRemove = otherEffects.get(randomIndex);
-			user.removeStatusEffect(toRemove.getEffectType());
-			return true;
+		List<StatusEffectInstance> effects = user.getStatusEffects().stream()
+				.filter(instance -> instance.getEffectType() != RANDOM_PURGE).toList();
+		if (effects.isEmpty()) {
+			return false;
 		}
-		return false;
+		StatusEffectInstance effect = effects.get(user.getEntityWorld().random.nextInt(effects.size()));
+		return user.removeStatusEffect(effect.getEffectType());
 	}
 
 	public static StatusEffectInstance createRandomPurgeEffect() {

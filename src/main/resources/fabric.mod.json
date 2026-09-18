@@ -19,6 +19,9 @@
 		],
 		"client": [
 			"net.george.milk.MilkLibClient"
+		],
+		"fabric-datagen": [
+			"net.george.milk.MilkLibDataGenerator"
 		]
 	},
 	"mixins": [
@@ -26,11 +29,11 @@
 	],
 	"depends": {
 		"fabricloader": ">=0.18.6",
-		"minecraft": ["1.21.6", "1.21.7", "1.21.8"],
+		"minecraft": "1.21.9",
 		"java": ">=21",
 		"fabric-api": "*"
 	},
-	"accessWidener": "milk-lib.accesswidener",
+	"accessWidener": "milk-lib.classtweaker",
 	"suggests": {
 		"another-mod": "*"
 	},

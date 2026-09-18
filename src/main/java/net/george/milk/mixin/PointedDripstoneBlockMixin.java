@@ -1,7 +1,7 @@
 package net.george.milk.mixin;
 
 import com.google.common.annotations.VisibleForTesting;
-import net.george.milk.api.Constants;
+import net.george.milk.api.DrippableFluidManager;
 import net.george.milk.api.DripstoneInteractingFluid;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -124,7 +124,7 @@ public abstract class PointedDripstoneBlockMixin {
         Fluid dripFluid = getDripFluid(world, fluid);
         ParticleEffect particleEffect;
         if (dripFluid instanceof DripstoneInteractingFluid interactingFluid) {
-            particleEffect = Constants.FLUIDS_TO_PARTICLES.get(interactingFluid).hang();
+            particleEffect = DrippableFluidManager.getInstance().getSet(interactingFluid).hang();
         } else {
             particleEffect = dripFluid.getDefaultState().isIn(FluidTags.LAVA) ? ParticleTypes.DRIPPING_DRIPSTONE_LAVA : ParticleTypes.DRIPPING_DRIPSTONE_WATER;
         }

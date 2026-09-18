@@ -26,7 +26,7 @@ public class LingeringMilkBottle extends LingeringPotionItem {
 				0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
 
 		ItemStack itemStack = user.getStackInHand(hand);
-		if (!world.isClient) {
+		if (!world.isClient()) {
 			PotionEntity potionEntity = new LingeringPotionEntity(world, user, itemStack);
 			potionEntity.setItem(itemStack);
 			potionEntity.setVelocity(user, user.getPitch(), user.getYaw(), -20.0F, 0.5F, 1.0F);

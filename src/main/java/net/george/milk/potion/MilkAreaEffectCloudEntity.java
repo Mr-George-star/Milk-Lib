@@ -23,7 +23,7 @@ public class MilkAreaEffectCloudEntity extends AreaEffectCloudEntity {
 	public void tick() {
 		boolean waiting = this.isWaiting();
 		float radius = this.getRadius();
-		if (this.getWorld().isClient) {
+		if (this.getEntityWorld().isClient()) {
 			if (waiting && this.random.nextBoolean()) {
 				return;
 			}
@@ -65,7 +65,7 @@ public class MilkAreaEffectCloudEntity extends AreaEffectCloudEntity {
 					u = ((float)(o & 0xFF) / 255.0F);
 				}
 
-				this.getWorld().addImportantParticleClient(particleEffect, d, e, n, s, t, u);
+				this.getEntityWorld().addImportantParticleClient(particleEffect, d, e, n, s, t, u);
 			}
 		} else {
 			if (this.age >= getWaitTime() + getDuration()) {
@@ -93,7 +93,7 @@ public class MilkAreaEffectCloudEntity extends AreaEffectCloudEntity {
 			}
 
 			if (this.age % 5 == 0) {
-				getWorld().getOtherEntities(this, getBoundingBox().expand(2)).forEach(entity -> {
+				this.getEntityWorld().getOtherEntities(this, getBoundingBox().expand(2)).forEach(entity -> {
 					if (entity instanceof LivingEntity livingEntity) {
 						livingEntity.addStatusEffect(MilkLib.createRandomPurgeEffect());
 					}

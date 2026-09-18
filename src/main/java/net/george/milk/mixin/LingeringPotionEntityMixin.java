@@ -30,7 +30,7 @@ public abstract class LingeringPotionEntityMixin extends PotionEntity implements
     @Inject(at = @At("HEAD"), method = "spawnAreaEffectCloud", cancellable = true)
     private void milkLib$spawnAreaEffectCloud(ServerWorld world, ItemStack stack, HitResult hitResult, CallbackInfo ci) {
         if (this.isMilk()) {
-            MilkAreaEffectCloudEntity areaEffectCloudEntity = new MilkAreaEffectCloudEntity(this.getWorld(), this.getX(), this.getY(), this.getZ());
+            MilkAreaEffectCloudEntity areaEffectCloudEntity = new MilkAreaEffectCloudEntity(this.getEntityWorld(), this.getX(), this.getY(), this.getZ());
             Entity entity = this.getOwner();
             if (entity instanceof LivingEntity) {
                 areaEffectCloudEntity.setOwner((LivingEntity) entity);
@@ -42,7 +42,7 @@ public abstract class LingeringPotionEntityMixin extends PotionEntity implements
             areaEffectCloudEntity.setWaitTime(10);
             areaEffectCloudEntity.setRadiusGrowth(-areaEffectCloudEntity.getRadius() / (float) areaEffectCloudEntity.getDuration());
 
-            this.getWorld().spawnEntity(areaEffectCloudEntity);
+            this.getEntityWorld().spawnEntity(areaEffectCloudEntity);
             ci.cancel();
         }
     }

@@ -30,7 +30,13 @@ dependencies {
 }
 
 loom {
-	accessWidenerPath = file("src/main/resources/milk-lib.accesswidener")
+	accessWidenerPath = file("src/main/resources/milk-lib.classtweaker")
+}
+
+fabricApi {
+	configureDataGeneration {
+		client = true
+	}
 }
 
 processResources {

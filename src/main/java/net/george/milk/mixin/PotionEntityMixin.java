@@ -54,12 +54,12 @@ public abstract class PotionEntityMixin extends ThrownItemEntity implements Flyi
     protected void milkLib$onCollision(HitResult hitResult, CallbackInfo ci) {
         if (isMilk()) {
             super.onCollision(hitResult);
-            if (!this.getWorld().isClient) {
-                ServerWorld serverWorld = (ServerWorld) this.getWorld();
+            if (!this.getEntityWorld().isClient()) {
+                ServerWorld serverWorld = (ServerWorld) this.getEntityWorld();
                 explodeWaterPotion(serverWorld);
                 spawnAreaEffectCloud(serverWorld, null, hitResult);
 
-                this.getWorld().syncWorldEvent(WorldEvents.INSTANT_SPLASH_POTION_SPLASHED, this.getBlockPos(), 0xFFFFFF);
+                this.getEntityWorld().syncWorldEvent(WorldEvents.INSTANT_SPLASH_POTION_SPLASHED, this.getBlockPos(), 0xFFFFFF);
                 this.discard();
             }
             ci.cancel();

@@ -1,15 +1,23 @@
 package net.george.milk.potion;
 
+import com.google.common.base.Suppliers;
 import net.george.milk.MilkLib;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.projectile.PersistentProjectileEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.particle.EffectParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.Supplier;
+
 public class MilkArrowEntity extends PersistentProjectileEntity {
+    private static final Supplier<EffectParticleEffect> effectSupplier = Suppliers.memoize(() ->
+            EffectParticleEffect.of(ParticleTypes.INSTANT_EFFECT, 16777215, 10)
+    );
+
     public MilkArrowEntity(EntityType<MilkArrowEntity> entityType, World world) {
         super(entityType, world);
     }
@@ -36,8 +44,9 @@ public class MilkArrowEntity extends PersistentProjectileEntity {
     @Override
     public void tick() {
         super.tick();
-        if (this.getWorld().isClient && !this.isInGround()) {
-            this.getWorld().addParticleClient(ParticleTypes.INSTANT_EFFECT, this.getX(), this.getY(), this.getZ(),
+        if (this.getEntityWorld().isClient() && !this.isInGround()) {
+            this.getEntityWorld().addParticleClient(effectSupplier.get(),
+                    this.getX(), this.getY(), this.getZ(),
                     0.0, 0.0, 0.0);
         }
     }

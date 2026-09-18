@@ -107,7 +107,7 @@ public abstract class MilkBucketItemMixin implements FluidModificationItem {
 		}
 
 		// isLiquid
-		if (!world.isClient && !state.isFullCube(world, pos)) {
+		if (!world.isClient() && !state.isFullCube(world, pos)) {
 			world.breakBlock(pos, true);
 		}
 		if (!world.setBlockState(pos, targetState, 11) && !state.getFluidState().isStill()) {

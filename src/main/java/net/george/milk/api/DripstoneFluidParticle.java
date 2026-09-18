@@ -3,12 +3,13 @@ package net.george.milk.api;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.particle.WaterSplashParticle;
+import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.world.ClientWorld;
 
 @Environment(EnvType.CLIENT)
 public class DripstoneFluidParticle extends WaterSplashParticle {
-    public DripstoneFluidParticle(ClientWorld clientWorld, double x, double y, double z, double velocityX, double velocityY, double velocityZ) {
-        super(clientWorld, x, y, z, velocityX, velocityY, velocityZ);
+    public DripstoneFluidParticle(ClientWorld clientWorld, double x, double y, double z, double velocityX, double velocityY, double velocityZ, Sprite sprite) {
+        super(clientWorld, x, y, z, velocityX, velocityY, velocityZ, sprite);
     }
 
     @Override

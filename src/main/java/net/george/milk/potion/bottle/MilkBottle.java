@@ -28,7 +28,7 @@ public class MilkBottle extends PotionItem {
 			Criteria.CONSUME_ITEM.trigger(player, stack);
 		}
 
-		if (!world.isClient && !user.hasStatusEffect(MilkLib.RANDOM_PURGE)) {
+		if (!world.isClient() && !user.hasStatusEffect(MilkLib.RANDOM_PURGE)) {
 			user.addStatusEffect(MilkLib.createRandomPurgeEffect());
 		}
 

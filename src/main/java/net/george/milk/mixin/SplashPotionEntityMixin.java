@@ -33,7 +33,7 @@ public abstract class SplashPotionEntityMixin extends PotionEntity implements Po
     private void milkLib$spawnAreaEffectCloud(ServerWorld world, ItemStack stack, HitResult hitResult, CallbackInfo ci) {
         if (this.isMilk()) {
             Box box = this.getBoundingBox().expand(4.0, 2.0, 4.0);
-            List<LivingEntity> list = this.getWorld().getNonSpectatingEntities(LivingEntity.class, box);
+            List<LivingEntity> list = this.getEntityWorld().getNonSpectatingEntities(LivingEntity.class, box);
             if (!list.isEmpty()) {
                 for (LivingEntity livingEntity : list) {
                     if (livingEntity.isAffectedBySplashPotions() && !livingEntity.hasStatusEffect(MilkLib.RANDOM_PURGE)) {

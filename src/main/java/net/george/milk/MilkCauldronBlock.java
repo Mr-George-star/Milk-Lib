@@ -30,7 +30,7 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 	static final CauldronBehavior EMPTY_TO_BUCKET = (state, world, pos, player, hand, stack) ->
 			CauldronBehavior.emptyCauldron(state, world, pos, player, hand, stack, new ItemStack(Items.MILK_BUCKET), blockState -> blockState.get(LEVEL) == 3, SoundEvents.ITEM_BUCKET_FILL);
 	static final CauldronBehavior MILKIFY_DYEABLE_ITEM = (state, world, pos, player, hand, stack) -> {
-		if (!world.isClient) {
+		if (!world.isClient()) {
 			player.setStackInHand(hand, DyedColorComponent.setColor(stack, Lists.newArrayList(DyeItem.byColor(DyeColor.WHITE))));
 			player.incrementStat(Stats.CLEAN_ARMOR);
 			LeveledCauldronBlock.decrementFluidLevel(state, world, pos);
@@ -41,7 +41,7 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 	static final CauldronBehavior MILKIFY_SHULKER_BOX = (state, world, pos, player, hand, stack) -> {
 		Block block = Block.getBlockFromItem(stack.getItem());
 		if ((block instanceof ShulkerBoxBlock)) {
-			if (!world.isClient) {
+			if (!world.isClient()) {
 				ItemStack itemStack = stack.copyComponentsToNewStack(Blocks.WHITE_SHULKER_BOX, 1);
                 player.setStackInHand(hand, itemStack);
 				player.incrementStat(Stats.CLEAN_SHULKER_BOX);
@@ -84,7 +84,7 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 
 	@Override
 	protected void onEntityCollision(BlockState state, World world, BlockPos pos, Entity entity, EntityCollisionHandler handler) {
-		if (!world.isClient && this.isEntityTouchingFluid(state, pos, entity) && entity.canModifyAt((ServerWorld) world, pos)) {
+		if (!world.isClient() && this.isEntityTouchingFluid(state, pos, entity) && entity.canModifyAt((ServerWorld) world, pos)) {
 			boolean shouldDrain = false;
 			if (entity.isOnFire()) {
 				entity.extinguish();
@@ -137,7 +137,7 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 	public record OutputToItemCauldronBehavior(ItemStack toFill, ItemStack filled, boolean ignoreComponent) implements CauldronBehavior {
 		@Override
 		public ActionResult interact(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, ItemStack held) {
-			if (!world.isClient && typeAndDataEqual(held, this.toFill, this.ignoreComponent)) {
+			if (!world.isClient() && typeAndDataEqual(held, this.toFill, this.ignoreComponent)) {
 				Item item = held.getItem();
 				player.setStackInHand(hand, ItemUsage.exchangeStack(held, player, this.filled.copy()));
 				player.incrementStat(Stats.USE_CAULDRON);
@@ -155,7 +155,7 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 		public ActionResult interact(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, ItemStack stack) {
 			Block block = state.getBlock();
 			if ((block == Blocks.CAULDRON || block == MilkLib.MILK_CAULDRON) && (!state.contains(LEVEL) || state.get(LEVEL) != 3) && typeAndDataEqual(stack, this.toEmpty, this.ignoreComponent)) {
-				if (!world.isClient) {
+				if (!world.isClient()) {
 					player.setStackInHand(hand, ItemUsage.exchangeStack(stack, player, this.emptied.copy()));
 					player.incrementStat(Stats.USE_CAULDRON);
 					player.incrementStat(Stats.USED.getOrCreateStat(stack.getItem()));
