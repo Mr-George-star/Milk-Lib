@@ -10,8 +10,6 @@ import net.minecraft.block.PointedDripstoneBlock;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.particle.ParticleEffect;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -21,6 +19,7 @@ import net.minecraft.world.WorldEvents;
 import net.minecraft.world.WorldView;
 import net.minecraft.world.event.GameEvent;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
@@ -44,7 +43,7 @@ public abstract class PointedDripstoneBlockMixin {
     }
 
     @Shadow
-    private static Fluid getDripFluid(World world, Fluid fluid) {
+    private static ParticleEffect getParticleEffect(World world, Fluid fluid, BlockPos pos) {
         throw new RuntimeException("Mixin application failed!");
     }
 
@@ -58,6 +57,10 @@ public abstract class PointedDripstoneBlockMixin {
     private static Optional<PointedDripstoneBlock.DrippingFluid> getFluid(World world, BlockPos pos, BlockState state) {
         throw new RuntimeException("Mixin application failed!");
     }
+
+    @Shadow
+    @Final
+    private static double DOWN_TIP_Y;
 
     /**
      * @author Tropheus Jay
@@ -116,19 +119,18 @@ public abstract class PointedDripstoneBlockMixin {
      * @author Tropheus Jay
      */
     @Overwrite
-    private static void createParticle(World world, BlockPos pos, BlockState state, Fluid fluid) {
-        Vec3d modelOffset = state.getModelOffset(pos);
-        double x = pos.getX() + 0.5 + modelOffset.x;
-        double y = ((pos.getY() + 1) - 0.6875F) - 0.0625;
-        double z = pos.getZ() + 0.5 + modelOffset.z;
-        Fluid dripFluid = getDripFluid(world, fluid);
+    private static void createParticle(World world, BlockPos pos, BlockState state, Fluid fluid, BlockPos fluidPos) {
+        Vec3d vec3d = state.getModelOffset(pos);
+        double x = pos.getX() + 0.5F + vec3d.x;
+        double y = pos.getY() + DOWN_TIP_Y - 0.0625F;
+        double z = pos.getZ() + 0.5F + vec3d.z;
         ParticleEffect particleEffect;
-        if (dripFluid instanceof DripstoneInteractingFluid interactingFluid) {
+        if (fluid instanceof DripstoneInteractingFluid interactingFluid) {
             particleEffect = DrippableFluidManager.getInstance().getSet(interactingFluid).hang();
         } else {
-            particleEffect = dripFluid.getDefaultState().isIn(FluidTags.LAVA) ? ParticleTypes.DRIPPING_DRIPSTONE_LAVA : ParticleTypes.DRIPPING_DRIPSTONE_WATER;
+            particleEffect = getParticleEffect(world, fluid, fluidPos);
         }
-        world.addParticleClient(particleEffect, x, y, z, 0.0, 0.0, 0.0);
+        world.addParticleClient(particleEffect, x, y, z, 0.0F, 0.0F, 0.0F);
     }
 
     /**

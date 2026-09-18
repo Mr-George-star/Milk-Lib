@@ -20,20 +20,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(FogRenderer.class)
 public abstract class BackgroundRendererMixin {
 	@Inject(method = "getFogColor", at = @At(value = "HEAD"), cancellable = true)
-	private void milkLib$getFogColor(Camera camera, float tickProgress, ClientWorld world, int viewDistance, float skyDarkness, boolean thick, CallbackInfoReturnable<Vector4f> cir) {
+	private void milkLib$getFogColor(Camera camera, float tickProgress, ClientWorld world, int viewDistance, float skyDarkness, CallbackInfoReturnable<Vector4f> cir) {
 		FluidState state = world.getFluidState(camera.getBlockPos());
 		if (MilkLib.isMilk(state)) {
 			cir.setReturnValue(new Vector4f(1, 1, 1, 1.0F));
         }
 	}
 
-	@Inject(method = "applyFog(Lnet/minecraft/client/render/Camera;IZLnet/minecraft/client/render/RenderTickCounter;FLnet/minecraft/client/world/ClientWorld;)Lorg/joml/Vector4f;",
+	@Inject(method = "applyFog(Lnet/minecraft/client/render/Camera;ILnet/minecraft/client/render/RenderTickCounter;FLnet/minecraft/client/world/ClientWorld;)Lorg/joml/Vector4f;",
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/fog/FogRenderer;applyFog(Ljava/nio/ByteBuffer;ILorg/joml/Vector4f;FFFFFF)V"), cancellable = true)
-	private void milkLib$applyFog(Camera camera, int viewDistance, boolean thick, RenderTickCounter tickCounter, float skyDarkness, ClientWorld world, CallbackInfoReturnable<Vector4f> cir, @Local FogData fogData) {
-		if (world == null) {
+	private void milkLib$applyFog(Camera camera, int viewDistance, RenderTickCounter renderTickCounter, float f, ClientWorld clientWorld, CallbackInfoReturnable<Vector4f> cir, @Local FogData fogData) {
+		if (clientWorld == null) {
 			cir.cancel();
 		} else {
-			FluidState state = world.getFluidState(camera.getBlockPos());
+			FluidState state = clientWorld.getFluidState(camera.getBlockPos());
 			if (MilkLib.isMilk(state)) {
 				fogData.renderDistanceStart = -8;
 				fogData.renderDistanceEnd = 5;

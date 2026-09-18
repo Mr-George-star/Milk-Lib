@@ -25,7 +25,7 @@ public abstract class GlassBottleItemMixin extends Item {
 	}
 
 	@Shadow
-	protected abstract ItemStack fill(ItemStack itemStack, PlayerEntity playerEntity, ItemStack itemStack2);
+	protected abstract ItemStack fill(ItemStack stack, PlayerEntity player, ItemStack outputStack);
 
 	@Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;playSound(Lnet/minecraft/entity/Entity;DDDLnet/minecraft/sound/SoundEvent;Lnet/minecraft/sound/SoundCategory;FF)V",
 			ordinal = 1, shift = At.Shift.AFTER), method = "use", cancellable = true)

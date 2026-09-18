@@ -51,7 +51,7 @@ import java.util.function.Function;
 
 import static net.minecraft.item.Items.*;
 
-@SuppressWarnings({"UnstableApiUsage", "unused"})
+@SuppressWarnings({"unused"})
 public class MilkLib implements ModInitializer {
 	public static final String MOD_ID = "milk-lib";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);

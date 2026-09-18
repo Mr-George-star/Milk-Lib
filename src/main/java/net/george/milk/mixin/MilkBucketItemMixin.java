@@ -25,6 +25,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldAccess;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import net.minecraft.world.event.GameEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -91,7 +92,7 @@ public abstract class MilkBucketItemMixin implements FluidModificationItem {
 			return hitResult != null && placeMilk(player, world, hitResult.getBlockPos().offset(hitResult.getSide()), null);
 		}
 
-		if (world.getDimension().ultrawarm()) {
+		if (world.getEnvironmentAttributes().getAttributeValue(EnvironmentAttributes.FAST_LAVA_GAMEPLAY)) {
 			int x = pos.getX(), y = pos.getY(), z = pos.getZ();
 			world.playSound(player, pos, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
 			for (int i = 0; i < 8; i++) {
