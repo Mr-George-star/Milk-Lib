@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import net.minecraft.block.*;
 import net.minecraft.block.cauldron.CauldronBehavior;
 import net.minecraft.component.type.DyedColorComponent;
+import net.minecraft.entity.CollisionEvent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCollisionHandler;
 import net.minecraft.entity.LivingEntity;
@@ -83,22 +84,17 @@ public class MilkCauldronBlock extends LeveledCauldronBlock {
 	}
 
 	@Override
-	protected void onEntityCollision(BlockState state, World world, BlockPos pos, Entity entity, EntityCollisionHandler handler) {
-		if (!world.isClient() && this.isEntityTouchingFluid(state, pos, entity) && entity.canModifyAt((ServerWorld) world, pos)) {
-			boolean shouldDrain = false;
-			if (entity.isOnFire()) {
-				entity.extinguish();
-				shouldDrain = true;
-			}
-
-			if (entity instanceof LivingEntity livingEntity) {
-				shouldDrain = MilkLib.tryRemoveRandomEffect(livingEntity);
-			}
-
-			if (shouldDrain) {
-				decrementFluidLevel(state, world, pos);
-			}
+	protected void onEntityCollision(BlockState state, World world, BlockPos pos, Entity entity, EntityCollisionHandler handler, boolean bl) {
+		if (world.isClient()) {
+			return;
 		}
+		if (!this.isEntityTouchingFluid(state, pos, entity) || !entity.canModifyAt((ServerWorld) world, pos)) {
+			return;
+		}
+		if (entity instanceof LivingEntity livingEntity && MilkLib.tryRemoveRandomEffect(livingEntity)) {
+			decrementFluidLevel(state, world, pos);
+		}
+		handler.addEvent(CollisionEvent.EXTINGUISH);
 	}
 
 	protected boolean isEntityTouchingFluid(BlockState state, BlockPos pos, Entity entity) {
