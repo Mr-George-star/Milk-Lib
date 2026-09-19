@@ -1,12 +1,16 @@
-classTweaker v1 named
+classTweaker v1 official
 
-transitive-accessible method net/minecraft/client/particle/WaterSplashParticle <init> (Lnet/minecraft/client/world/ClientWorld;DDDDDDLnet/minecraft/client/texture/Sprite;)V
-transitive-accessible class net/minecraft/block/PointedDripstoneBlock$DrippingFluid
-transitive-accessible method net/minecraft/block/AbstractCauldronBlock fillFromDripstone (Lnet/minecraft/block/BlockState;Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/fluid/Fluid;)V
-transitive-accessible class net/minecraft/client/particle/BlockLeakParticle$Dripping
-transitive-accessible class net/minecraft/client/particle/BlockLeakParticle$DripstoneLavaDrip
-accessible method net/minecraft/client/particle/BlockLeakParticle$Dripping <init> (Lnet/minecraft/client/world/ClientWorld;DDDLnet/minecraft/fluid/Fluid;Lnet/minecraft/particle/ParticleEffect;Lnet/minecraft/client/texture/Sprite;)V
-accessible method net/minecraft/client/particle/BlockLeakParticle$DripstoneLavaDrip <init> (Lnet/minecraft/client/world/ClientWorld;DDDLnet/minecraft/fluid/Fluid;Lnet/minecraft/particle/ParticleEffect;Lnet/minecraft/client/texture/Sprite;)V
-transitive-accessible field net/minecraft/client/particle/WaterSplashParticle$SplashFactory spriteProvider Lnet/minecraft/client/particle/SpriteProvider;
-transitive-accessible class net/minecraft/screen/BrewingStandScreenHandler$PotionSlot
-transitive-accessible class net/minecraft/recipe/BrewingRecipeRegistry$Recipe
+transitive-accessible method net/minecraft/client/particle/SplashParticle <init> (Lnet/minecraft/client/multiplayer/ClientLevel;DDDDDDLnet/minecraft/client/renderer/texture/TextureAtlasSprite;)V
+transitive-accessible class net/minecraft/world/level/block/PointedDripstoneBlock$FluidInfo
+transitive-accessible method net/minecraft/world/level/block/AbstractCauldronBlock receiveStalactiteDrip (Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/material/Fluid;)V
+transitive-accessible class net/minecraft/client/particle/DripParticle$DripHangParticle
+transitive-accessible class net/minecraft/client/particle/DripParticle$DripstoneFallAndLandParticle
+transitive-accessible method net/minecraft/client/particle/DripParticle$DripHangParticle <init> (Lnet/minecraft/client/multiplayer/ClientLevel;DDDLnet/minecraft/world/level/material/Fluid;Lnet/minecraft/core/particles/ParticleOptions;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;)V
+transitive-accessible method net/minecraft/client/particle/DripParticle$DripstoneFallAndLandParticle <init> (Lnet/minecraft/client/multiplayer/ClientLevel;DDDLnet/minecraft/world/level/material/Fluid;Lnet/minecraft/core/particles/ParticleOptions;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;)V
+transitive-accessible field net/minecraft/client/particle/SplashParticle$Provider sprite Lnet/minecraft/client/particle/SpriteSet;
+transitive-accessible class net/minecraft/world/inventory/BrewingStandMenu$PotionSlot
+accessible method net/minecraft/core/cauldron/CauldronInteraction$Dispatcher put (Lnet/minecraft/world/item/Item;Lnet/minecraft/core/cauldron/CauldronInteraction;)V
+accessible method net/minecraft/core/cauldron/CauldronInteraction$Dispatcher put (Lnet/minecraft/tags/TagKey;Lnet/minecraft/core/cauldron/CauldronInteraction;)V
+accessible method net/minecraft/core/cauldron/CauldronInteractions emptyBucket (Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/sounds/SoundEvent;)Lnet/minecraft/world/InteractionResult;
+accessible method net/minecraft/core/cauldron/CauldronInteractions fillBucket (Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/item/ItemStack;Ljava/util/function/Predicate;Lnet/minecraft/sounds/SoundEvent;)Lnet/minecraft/world/InteractionResult;
+accessible method net/minecraft/core/cauldron/CauldronInteractions newDispatcher (Ljava/lang/String;)Lnet/minecraft/core/cauldron/CauldronInteraction$Dispatcher;

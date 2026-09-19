@@ -1,50 +1,49 @@
 package net.george.milk.potion;
 
 import net.george.milk.MilkLib;
-import net.minecraft.component.type.PotionContentsComponent;
-import net.minecraft.entity.AreaEffectCloudEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.particle.ParticleEffect;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.potion.Potions;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.World;
-
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.AreaEffectCloud;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.level.Level;
 import java.util.List;
 import java.util.Optional;
 
-public class MilkAreaEffectCloudEntity extends AreaEffectCloudEntity {
-	public MilkAreaEffectCloudEntity(World world, double x, double y, double z) {
+public class MilkAreaEffectCloudEntity extends AreaEffectCloud {
+	public MilkAreaEffectCloudEntity(Level world, double x, double y, double z) {
 		super(world, x, y, z);
-		this.setPotionContents(new PotionContentsComponent(Optional.ofNullable(Potions.WATER), Optional.of(0xFFFFFF), List.of(), Optional.empty()));
+		this.setPotionContents(new PotionContents(Optional.of(Potions.WATER), Optional.of(0xFFFFFF), List.of(), Optional.empty()));
 	}
 
 	@Override
 	public void tick() {
 		boolean waiting = this.isWaiting();
 		float radius = this.getRadius();
-		if (this.getEntityWorld().isClient()) {
+		if (this.level().isClientSide()) {
 			if (waiting && this.random.nextBoolean()) {
 				return;
 			}
 
-			ParticleEffect particleEffect = this.getParticleType();
+			ParticleOptions particleEffect = this.getParticle();
 			int area;
 			float actualRadius;
 			if (waiting) {
 				area = 2;
 				actualRadius = 0.2F;
 			} else {
-				area = MathHelper.ceil((float) Math.PI * radius * radius);
+				area = Mth.ceil((float) Math.PI * radius * radius);
 				actualRadius = radius;
 			}
 
 			for (int k = 0; k < area; ++k) {
 				float l = this.random.nextFloat() * (float) (Math.PI * 2);
-				float m = MathHelper.sqrt(this.random.nextFloat()) * actualRadius;
-				double d = this.getX() + (double)(MathHelper.cos(l) * m);
+				float m = Mth.sqrt(this.random.nextFloat()) * actualRadius;
+				double d = this.getX() + (double)(Mth.cos(l) * m);
 				double e = this.getY();
-				double n = this.getZ() + (double)(MathHelper.sin(l) * m);
+				double n = this.getZ() + (double)(Mth.sin(l) * m);
 				double s;
 				double t;
 				double u;
@@ -65,15 +64,15 @@ public class MilkAreaEffectCloudEntity extends AreaEffectCloudEntity {
 					u = ((float)(o & 0xFF) / 255.0F);
 				}
 
-				this.getEntityWorld().addImportantParticleClient(particleEffect, d, e, n, s, t, u);
+				this.level().addAlwaysVisibleParticle(particleEffect, d, e, n, s, t, u);
 			}
 		} else {
-			if (this.age >= getWaitTime() + getDuration()) {
+			if (this.tickCount >= getWaitTime() + getDuration()) {
 				this.discard();
 				return;
 			}
 
-			boolean bl2 = this.age < getWaitTime();
+			boolean bl2 = this.tickCount < getWaitTime();
 			if (waiting != bl2) {
 				this.setWaiting(bl2);
 			}
@@ -82,8 +81,8 @@ public class MilkAreaEffectCloudEntity extends AreaEffectCloudEntity {
 				return;
 			}
 
-			if (getRadiusGrowth() != 0.0F) {
-				radius += getRadiusGrowth();
+			if (getRadiusPerTick() != 0.0F) {
+				radius += getRadiusPerTick();
 				if (radius < 0.5F) {
 					this.discard();
 					return;
@@ -92,10 +91,10 @@ public class MilkAreaEffectCloudEntity extends AreaEffectCloudEntity {
 				this.setRadius(radius);
 			}
 
-			if (this.age % 5 == 0) {
-				this.getEntityWorld().getOtherEntities(this, getBoundingBox().expand(2)).forEach(entity -> {
+			if (this.tickCount % 5 == 0) {
+				this.level().getEntities(this, getBoundingBox().inflate(2)).forEach(entity -> {
 					if (entity instanceof LivingEntity livingEntity) {
-						livingEntity.addStatusEffect(MilkLib.createRandomPurgeEffect());
+						livingEntity.addEffect(MilkLib.createRandomPurgeEffect());
 					}
 				});
 			}

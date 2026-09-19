@@ -3,15 +3,16 @@ package net.george.milk.api;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.fabricmc.fabric.api.particle.v1.FabricParticleTypes;
-import net.minecraft.data.DataOutput;
+import net.minecraft.core.Registry;
+import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
-import net.minecraft.data.DataWriter;
-import net.minecraft.particle.SimpleParticleType;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.util.Identifier;
+import net.minecraft.data.PackOutput;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.ApiStatus.NonExtendable;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -25,14 +26,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DrippableFluidManagerImpl implements DrippableFluidManager {
     static final DrippableFluidManagerImpl INSTANCE = new DrippableFluidManagerImpl();
     private final Map<String, RegisterImpl> registers = new ConcurrentHashMap<>();
-    private final Map<String, Map<DripstoneInteractingFluid, RegisteredParticleTypeSet>> registered = new ConcurrentHashMap<>();
-    private final Map<DripstoneInteractingFluid, RegisteredParticleTypeSet> registeredByFluid = new ConcurrentHashMap<>();
+    private final Map<String, Map<DrippableFluid, RegisteredParticleTypeSet>> registered = new ConcurrentHashMap<>();
+    private final Map<DrippableFluid, RegisteredParticleTypeSet> registeredByFluid = new ConcurrentHashMap<>();
 
     private DrippableFluidManagerImpl() {
     }
 
     @Override
-    public ParticleTypeSet getSet(DripstoneInteractingFluid fluid) {
+    public ParticleTypeSet getSet(DrippableFluid fluid) {
         return Optional.ofNullable(this.registeredByFluid.get(fluid))
                 .map(RegisteredParticleTypeSet::getDefault)
                 .orElseThrow(() ->
@@ -45,7 +46,7 @@ public class DrippableFluidManagerImpl implements DrippableFluidManager {
     }
 
     @Override
-    public GenerationProvider createProvider(String modId, DataOutput output) {
+    public GenerationProvider createProvider(String modId, PackOutput output) {
         return new GenerationProvider(modId, output);
     }
 
@@ -57,21 +58,21 @@ public class DrippableFluidManagerImpl implements DrippableFluidManager {
         }
 
         @Override
-        public ParticleTypeSet register(String name, DripstoneInteractingFluid fluid) {
+        public ParticleTypeSet register(String name, DrippableFluid fluid) {
             if (registeredByFluid.containsKey(fluid)) {
                 throw new IllegalStateException("Fluid is already registered: " + fluid);
             }
-            Identifier hangId = Identifier.of(this.modId, name + "_hang");
-            Identifier fallId = Identifier.of(this.modId, name + "_fall");
-            Identifier splashId = Identifier.of(this.modId, name + "_splash");
+            Identifier hangId = Identifier.fromNamespaceAndPath(this.modId, name + "_hang");
+            Identifier fallId = Identifier.fromNamespaceAndPath(this.modId, name + "_fall");
+            Identifier splashId = Identifier.fromNamespaceAndPath(this.modId, name + "_splash");
 
-            SimpleParticleType hang = Registry.register(Registries.PARTICLE_TYPE,
+            SimpleParticleType hang = Registry.register(BuiltInRegistries.PARTICLE_TYPE,
                     hangId,
                     FabricParticleTypes.simple());
-            SimpleParticleType fall = Registry.register(Registries.PARTICLE_TYPE,
+            SimpleParticleType fall = Registry.register(BuiltInRegistries.PARTICLE_TYPE,
                     fallId,
                     FabricParticleTypes.simple());
-            SimpleParticleType splash = Registry.register(Registries.PARTICLE_TYPE,
+            SimpleParticleType splash = Registry.register(BuiltInRegistries.PARTICLE_TYPE,
                     splashId,
                     FabricParticleTypes.simple());
             RegisteredParticleTypeSet set = new RegisteredParticleTypeSet(
@@ -88,16 +89,17 @@ public class DrippableFluidManagerImpl implements DrippableFluidManager {
 
     public class GenerationProvider implements DataProvider {
         private final String modId;
-        private final DataOutput.PathResolver resolver;
+        private final PackOutput.PathProvider resolver;
 
-        GenerationProvider(String modId, DataOutput output) {
+        GenerationProvider(String modId, PackOutput output) {
             this.modId = modId;
-            this.resolver = output.getResolver(DataOutput.OutputType.RESOURCE_PACK, "particles");
+            this.resolver = output.createPathProvider(PackOutput.Target.RESOURCE_PACK, "particles");
         }
 
+        @NotNull
         @Override
-        public CompletableFuture<?> run(DataWriter writer) {
-            Map<DripstoneInteractingFluid, RegisteredParticleTypeSet> data = registered.get(this.modId);
+        public CompletableFuture<?> run(@NotNull CachedOutput output) {
+            Map<DrippableFluid, RegisteredParticleTypeSet> data = registered.get(this.modId);
 
             if (data.isEmpty()) {
                 return CompletableFuture.runAsync(() -> {});
@@ -106,10 +108,11 @@ public class DrippableFluidManagerImpl implements DrippableFluidManager {
                 for (RegisteredParticleTypeSet registered : data.values()) {
                     result.putAll(registered.getSprites());
                 }
-                return DataProvider.writeAllToPath(writer, ParticleDataObject.CODEC, this.resolver, result);
+                return DataProvider.saveAll(output, ParticleDataObject.CODEC, this.resolver, result);
             }
         }
 
+        @NotNull
         @Override
         public String getName() {
             return "Drippable Fluid Particle Data Generator [" + this.modId + "]";
@@ -145,9 +148,9 @@ public class DrippableFluidManagerImpl implements DrippableFluidManager {
 
         public Map<Identifier, ParticleDataObject> getSprites() {
             Map<Identifier, ParticleDataObject> result = new HashMap<>();
-            result.put(this.hang.id, new ParticleDataObject(Constants.DRIP_HANG));
-            result.put(this.fall.id, new ParticleDataObject(Constants.DRIP_FALL));
-            result.put(this.splash.id, new ParticleDataObject(Constants.SPLASH));
+            result.put(this.hang.id, new ParticleDataObject(DrippableFluidManager.DRIP_HANG));
+            result.put(this.fall.id, new ParticleDataObject(DrippableFluidManager.DRIP_FALL));
+            result.put(this.splash.id, new ParticleDataObject(DrippableFluidManager.SPLASH));
             return result;
         }
 

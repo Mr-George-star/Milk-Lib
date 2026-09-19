@@ -1,28 +1,39 @@
 package net.george.milk.mixin;
 
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import net.george.milk.MilkLib;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.george.milk.MilkLibTags;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Entity.class)
 public abstract class EntityMixin {
-	@WrapOperation(method = "updateMovementInFluid", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;getFluidState(Lnet/minecraft/util/math/BlockPos;)Lnet/minecraft/fluid/FluidState;", ordinal = 0))
-	public FluidState milkLib$clearEffectsInMilk(World instance, BlockPos pos, Operation<FluidState> original) {
-		FluidState originalState = original.call(instance, pos);
+	@Inject(method = "collidedWithFluid", at = @At("HEAD"))
+	private void milkLib$clearEffectsInMilks(FluidState fluidState, BlockPos blockPos, Vec3 from, Vec3 _to, CallbackInfoReturnable<Boolean> cir) {
 		if ((Object) this instanceof LivingEntity entity) {
-			if (MilkLib.isMilk(originalState)) {
-				if (!entity.getStatusEffects().isEmpty()) {
-					entity.clearStatusEffects();
+			if (MilkLib.isMilk(fluidState)) {
+				if (!entity.getActiveEffects().isEmpty()) {
+					entity.removeAllEffects();
 				}
 			}
 		}
-		return originalState;
+	}
+
+	@WrapWithCondition(
+			method = "updateFluidInteraction",
+			at = @At(
+					value = "INVOKE",
+					target = "Lnet/minecraft/world/entity/Entity;doWaterSplashEffect()V"
+			)
+	)
+	private boolean milkLib$preventMilkSplash(Entity instance) {
+		return !instance.level().getFluidState(instance.blockPosition()).is(MilkLibTags.MILK);
 	}
 }

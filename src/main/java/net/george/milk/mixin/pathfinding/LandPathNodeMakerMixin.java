@@ -1,26 +1,26 @@
 package net.george.milk.mixin.pathfinding;
 
 import net.george.milk.MilkLib;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.ai.pathing.LandPathNodeMaker;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-@Mixin(LandPathNodeMaker.class)
+@Mixin(WalkNodeEvaluator.class)
 public class LandPathNodeMakerMixin {
 	@ModifyVariable(
-			method = "getStart()Lnet/minecraft/entity/ai/pathing/PathNode;",
+			method = "getStart",
 			at = @At(
 					value = "INVOKE",
-					target = "Lnet/minecraft/block/BlockState;isOf(Lnet/minecraft/block/Block;)Z"
-			)
-	)
-	private BlockState treatMilkAsWater(BlockState state) {
-		if (MilkLib.isMilk(state)) {
-			return Blocks.WATER.getDefaultState();
+					target = "Lnet/minecraft/world/level/block/state/BlockState;is(Ljava/lang/Object;)Z"
+			),
+			name = "blockState")
+	private BlockState treatMilkAsWater(BlockState blockState) {
+		if (MilkLib.isMilk(blockState)) {
+			return Blocks.WATER.defaultBlockState();
 		}
-		return state;
+		return blockState;
 	}
 }

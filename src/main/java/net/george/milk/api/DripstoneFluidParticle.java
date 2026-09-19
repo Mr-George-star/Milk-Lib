@@ -2,35 +2,35 @@ package net.george.milk.api;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.particle.WaterSplashParticle;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.world.ClientWorld;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.particle.SplashParticle;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
 @Environment(EnvType.CLIENT)
-public class DripstoneFluidParticle extends WaterSplashParticle {
-    public DripstoneFluidParticle(ClientWorld clientWorld, double x, double y, double z, double velocityX, double velocityY, double velocityZ, Sprite sprite) {
+public class DripstoneFluidParticle extends SplashParticle {
+    public DripstoneFluidParticle(ClientLevel clientWorld, double x, double y, double z, double velocityX, double velocityY, double velocityZ, TextureAtlasSprite sprite) {
         super(clientWorld, x, y, z, velocityX, velocityY, velocityZ, sprite);
     }
 
     @Override
     public void tick() {
-        this.lastX = this.x;
-        this.lastY = this.y;
-        this.lastZ = this.z;
-        if (this.maxAge-- <= 0) {
-            this.markDead();
+        this.xo = this.x;
+        this.yo = this.y;
+        this.zo = this.z;
+        if (this.lifetime-- <= 0) {
+            this.remove();
         } else {
-            this.velocityY -= this.gravityStrength;
-            this.move(this.velocityX, this.velocityY, this.velocityZ);
-            this.velocityX *= 0.98F;
-            this.velocityY *= 0.98F;
-            this.velocityZ *= 0.98F;
+            this.yd -= this.gravity;
+            this.move(this.xd, this.yd, this.zd);
+            this.xd *= 0.98F;
+            this.yd *= 0.98F;
+            this.zd *= 0.98F;
             if (this.onGround) {
                 if (Math.random() < 0.5) {
-                    this.markDead();
+                    this.remove();
                 }
-                this.velocityX *= 0.7F;
-                this.velocityZ *= 0.7F;
+                this.xd *= 0.7F;
+                this.zd *= 0.7F;
             }
         }
     }

@@ -1,99 +1,105 @@
 package net.george.milk;
 
-import net.george.milk.api.DripstoneInteractingFluid;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.PointedDripstoneBlock;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.fluid.FlowableFluid;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.state.StateManager;
-import net.minecraft.state.property.Properties;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldAccess;
-import net.minecraft.world.WorldView;
+import net.george.milk.api.DrippableFluid;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.PointedDripstoneBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.material.FlowingFluid;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public abstract class MilkFluid extends FlowableFluid implements DripstoneInteractingFluid {
+public abstract class MilkFluid extends FlowingFluid implements DrippableFluid {
+    @NotNull
     @Override
-    public Fluid getStill() {
+    public Fluid getSource() {
         return MilkLib.STILL_MILK;
     }
 
+    @NotNull
     @Override
     public Fluid getFlowing() {
         return MilkLib.FLOWING_MILK;
     }
 
+    @NotNull
     @Override
-    public Item getBucketItem() {
+    public Item getBucket() {
         return Items.MILK_BUCKET;
     }
 
     @Override
-    protected int getMaxFlowDistance(WorldView world) {
+    protected int getSlopeFindDistance(@NotNull LevelReader world) {
         return 2;
     }
 
     @Override
-    protected float getBlastResistance() {
+    protected float getExplosionResistance() {
         return 100.0F;
     }
 
     @Override
-    protected boolean canBeReplacedWith(FluidState fluidState, BlockView blockView, BlockPos blockPos, Fluid fluid, Direction direction) {
+    protected boolean canBeReplacedWith(@NotNull FluidState fluidState, @NotNull BlockGetter blockView, @NotNull BlockPos blockPos, @NotNull Fluid fluid, @NotNull Direction direction) {
         return false;
     }
 
     @Override
-    public int getTickRate(WorldView worldView) {
+    public int getTickDelay(@NotNull LevelReader worldView) {
         return 5;
     }
 
     @Override
-    protected int getLevelDecreasePerBlock(WorldView worldView) {
+    protected int getDropOff(@NotNull LevelReader worldView) {
         return 1;
     }
 
     @Override
-    protected void beforeBreakingBlock(WorldAccess world, BlockPos pos, BlockState state) {
+    protected void beforeDestroyingBlock(@NotNull LevelAccessor world, @NotNull BlockPos pos, BlockState state) {
         final BlockEntity blockEntity = state.hasBlockEntity() ? world.getBlockEntity(pos) : null;
-        Block.dropStacks(state, world, pos, blockEntity);
+        Block.dropResources(state, world, pos, blockEntity);
     }
 
     @Override
-    protected boolean isInfinite(ServerWorld world) {
+    protected boolean canConvertToSource(@NotNull ServerLevel world) {
         return false;
     }
 
     @Override
-    public boolean matchesType(Fluid fluid) {
-        return fluid == getStill() || fluid == getFlowing();
+    public boolean isSame(@NotNull Fluid fluid) {
+        return fluid == getSource() || fluid == getFlowing();
+    }
+
+    @NotNull
+    @Override
+    protected BlockState createLegacyBlock(@NotNull FluidState fluidState) {
+        return MilkLib.MILK_FLUID_BLOCK.defaultBlockState().setValue(BlockStateProperties.LEVEL, getLegacyLevel(fluidState));
+    }
+
+    @NotNull
+    @Override
+    public Optional<SoundEvent> getPickupSound() {
+        return Optional.of(SoundEvents.BUCKET_FILL);
     }
 
     @Override
-    protected BlockState toBlockState(FluidState fluidState) {
-        return MilkLib.MILK_FLUID_BLOCK.getDefaultState().with(Properties.LEVEL_15, getBlockStateLevel(fluidState));
-    }
-
-    @Override
-    public Optional<SoundEvent> getBucketFillSound() {
-        return Optional.of(SoundEvents.ITEM_BUCKET_FILL);
-    }
-
-    @Override
-    public int getParticleColor(World world, double x, double y, double z, double velocityX, double velocityY, double velocityZ) {
+    public int getParticleColor(Level world, double x, double y, double z, double velocityX, double velocityY, double velocityZ) {
         return 0xFFFFFF;
     }
 
@@ -103,46 +109,46 @@ public abstract class MilkFluid extends FlowableFluid implements DripstoneIntera
     }
 
     @Override
-    public boolean fillsCauldrons(BlockState state, World world, BlockPos cauldronPos) {
+    public boolean fillsCauldrons(BlockState state, Level world, BlockPos cauldronPos) {
         return MilkLib.MILK_CAULDRON != null;
     }
 
     @Override
-    public @Nullable BlockState getCauldronBlockState(BlockState state, World world, BlockPos cauldronPos) {
-        return MilkLib.MILK_CAULDRON.getDefaultState();
+    public @Nullable BlockState getCauldronBlockState(BlockState state, Level world, BlockPos cauldronPos) {
+        return MilkLib.MILK_CAULDRON.defaultBlockState();
     }
 
     @Override
-    public float getFluidDripChance(World world, PointedDripstoneBlock.DrippingFluid drippingFluid) {
+    public float getFluidDripChance(Level world, PointedDripstoneBlock.FluidInfo drippingFluid) {
         return WATER_DRIP_CHANCE;
     }
 
     public static class Flowing extends MilkFluid {
         @Override
-        protected void appendProperties(StateManager.Builder<Fluid, FluidState> builder) {
-            super.appendProperties(builder);
+        protected void createFluidStateDefinition(@NotNull StateDefinition.Builder<Fluid, FluidState> builder) {
+            super.createFluidStateDefinition(builder);
             builder.add(LEVEL);
         }
 
         @Override
-        public int getLevel(FluidState fluidState) {
-            return fluidState.get(LEVEL);
+        public int getAmount(FluidState fluidState) {
+            return fluidState.getValue(LEVEL);
         }
 
         @Override
-        public boolean isStill(FluidState fluidState) {
+        public boolean isSource(@NotNull FluidState fluidState) {
             return false;
         }
     }
 
     public static class Still extends MilkFluid {
         @Override
-        public int getLevel(FluidState fluidState) {
+        public int getAmount(@NotNull FluidState fluidState) {
             return 8;
         }
 
         @Override
-        public boolean isStill(FluidState fluidState) {
+        public boolean isSource(@NotNull FluidState fluidState) {
             return true;
         }
     }

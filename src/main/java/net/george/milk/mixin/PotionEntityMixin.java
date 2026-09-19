@@ -1,20 +1,21 @@
 package net.george.milk.mixin;
 
 import net.george.milk.potion.bottle.PotionItemEntityExtensions;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.FlyingItemEntity;
-import net.minecraft.entity.projectile.thrown.PotionEntity;
-import net.minecraft.entity.projectile.thrown.ThrownItemEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.storage.ReadView;
-import net.minecraft.storage.WriteView;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldEvents;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.projectile.ItemSupplier;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.AbstractThrownPotion;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.LevelEvent;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -23,43 +24,43 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @SuppressWarnings("AddedMixinMembersNamePattern")
-@Mixin(PotionEntity.class)
-public abstract class PotionEntityMixin extends ThrownItemEntity implements FlyingItemEntity, PotionItemEntityExtensions {
-    @Shadow protected abstract void extinguishFire(BlockPos pos);
-    @Shadow protected abstract void spawnAreaEffectCloud(ServerWorld world, ItemStack stack, HitResult hitResult);
-    @Shadow protected abstract void explodeWaterPotion(ServerWorld world);
+@Mixin(AbstractThrownPotion.class)
+public abstract class PotionEntityMixin extends ThrowableItemProjectile implements ItemSupplier, PotionItemEntityExtensions {
+    @Shadow protected abstract void dowseFire(BlockPos pos);
+    @Shadow protected abstract void onHitAsPotion(ServerLevel world, ItemStack stack, HitResult hitResult);
+    @Shadow protected abstract void onHitAsWater(ServerLevel level);
 
     @Unique
     private boolean milk = false;
 
-    public PotionEntityMixin(EntityType<? extends ThrownItemEntity> entityType, World world) {
+    public PotionEntityMixin(EntityType<? extends ThrowableItemProjectile> entityType, Level world) {
         super(entityType, world);
     }
 
-    @Inject(method = "onBlockHit", at = @At(value = "HEAD"))
-    protected void milkLib$onBlockHit(BlockHitResult blockHitResult, CallbackInfo ci) {
+    @Inject(method = "onHitBlock", at = @At(value = "HEAD"))
+    protected void milkLib$onBlockHit(BlockHitResult hitResult, CallbackInfo ci) {
         if (isMilk()) {
-            Direction side = blockHitResult.getSide();
-            BlockPos pos = blockHitResult.getBlockPos().offset(side);
-            this.extinguishFire(pos);
-            this.extinguishFire(pos.offset(side.getOpposite()));
+            Direction side = hitResult.getDirection();
+            BlockPos pos = hitResult.getBlockPos().relative(side);
+            this.dowseFire(pos);
+            this.dowseFire(pos.relative(side.getOpposite()));
 
-            for (Direction direction2 : Direction.Type.HORIZONTAL) {
-                this.extinguishFire(pos.offset(direction2));
+            for (Direction direction2 : Direction.Plane.HORIZONTAL) {
+                this.dowseFire(pos.relative(direction2));
             }
         }
     }
 
-    @Inject(method = "onCollision", at = @At(value = "HEAD"), cancellable = true)
+    @Inject(method = "onHit", at = @At(value = "HEAD"), cancellable = true)
     protected void milkLib$onCollision(HitResult hitResult, CallbackInfo ci) {
         if (isMilk()) {
-            super.onCollision(hitResult);
-            if (!this.getEntityWorld().isClient()) {
-                ServerWorld serverWorld = (ServerWorld) this.getEntityWorld();
-                explodeWaterPotion(serverWorld);
-                spawnAreaEffectCloud(serverWorld, null, hitResult);
+            super.onHit(hitResult);
+            if (!this.level().isClientSide()) {
+                ServerLevel serverWorld = (ServerLevel) this.level();
+                onHitAsWater(serverWorld);
+                onHitAsPotion(serverWorld, null, hitResult);
 
-                this.getEntityWorld().syncWorldEvent(WorldEvents.INSTANT_SPLASH_POTION_SPLASHED, this.getBlockPos(), 0xFFFFFF);
+                this.level().levelEvent(LevelEvent.PARTICLES_INSTANT_POTION_SPLASH, this.blockPosition(), 0xFFFFFF);
                 this.discard();
             }
             ci.cancel();
@@ -67,15 +68,15 @@ public abstract class PotionEntityMixin extends ThrownItemEntity implements Flyi
     }
 
     @Override
-    protected void writeCustomData(WriteView view) {
-        super.writeCustomData(view);
+    protected void addAdditionalSaveData(@NotNull ValueOutput view) {
+        super.addAdditionalSaveData(view);
         view.putBoolean("Milk", this.milk);
     }
 
     @Override
-    protected void readCustomData(ReadView view) {
-        super.readCustomData(view);
-        this.milk = view.getBoolean("Milk", false);
+    protected void readAdditionalSaveData(@NotNull ValueInput view) {
+        super.readAdditionalSaveData(view);
+        this.milk = view.getBooleanOr("Milk", false);
     }
 
     @Override

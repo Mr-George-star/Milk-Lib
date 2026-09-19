@@ -1,17 +1,18 @@
 package net.george.milk.potion;
 
 import net.george.milk.MilkLib;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.effect.StatusEffect;
-import net.minecraft.entity.effect.StatusEffectCategory;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.world.entity.LivingEntity;
+import org.jetbrains.annotations.NotNull;
 
-public class RandomPurgeEffect extends StatusEffect {
+public class RandomPurgeEffect extends MobEffect {
     public RandomPurgeEffect() {
-        super(StatusEffectCategory.NEUTRAL, 16777215);
+        super(MobEffectCategory.NEUTRAL, 16777215);
     }
 
     @Override
-    public void onApplied(LivingEntity entity, int amplifier) {
+    public void onEffectStarted(@NotNull LivingEntity entity, int amplifier) {
         MilkLib.tryRemoveRandomEffect(entity);
     }
 }

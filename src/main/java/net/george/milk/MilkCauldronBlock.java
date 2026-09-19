@@ -1,171 +1,175 @@
 package net.george.milk;
 
-import com.google.common.collect.Lists;
-import net.minecraft.block.*;
-import net.minecraft.block.cauldron.CauldronBehavior;
-import net.minecraft.component.type.DyedColorComponent;
-import net.minecraft.entity.CollisionEvent;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityCollisionHandler;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.item.*;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.stat.Stats;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.DyeColor;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldView;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.event.GameEvent;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.cauldron.CauldronInteraction;
+import net.minecraft.core.cauldron.CauldronInteractions;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.stats.Stats;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.InsideBlockEffectApplier;
+import net.minecraft.world.entity.InsideBlockEffectType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.*;
+import net.minecraft.world.item.component.DyedItemColor;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LayeredCauldronBlock;
+import net.minecraft.world.level.block.ShulkerBoxBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.level.material.Fluid;
+import org.jetbrains.annotations.NotNull;
 
-public class MilkCauldronBlock extends LeveledCauldronBlock {
-	static final CauldronBehavior.CauldronBehaviorMap MILK_CAULDRON_BEHAVIOR = CauldronBehavior.createMap("milk");
-	static final CauldronBehavior FILL_FROM_BUCKET = (state, world, pos, player, hand, stack) ->
-			CauldronBehavior.fillCauldron(world, pos, player, hand, stack, MilkLib.MILK_CAULDRON.getDefaultState().with(LEVEL, 3), SoundEvents.ITEM_BUCKET_EMPTY);
-	static final CauldronBehavior EMPTY_TO_BUCKET = (state, world, pos, player, hand, stack) ->
-			CauldronBehavior.emptyCauldron(state, world, pos, player, hand, stack, new ItemStack(Items.MILK_BUCKET), blockState -> blockState.get(LEVEL) == 3, SoundEvents.ITEM_BUCKET_FILL);
-	static final CauldronBehavior MILKIFY_DYEABLE_ITEM = (state, world, pos, player, hand, stack) -> {
-		if (!world.isClient()) {
-			player.setStackInHand(hand, DyedColorComponent.setColor(stack, Lists.newArrayList(DyeItem.byColor(DyeColor.WHITE))));
-			player.incrementStat(Stats.CLEAN_ARMOR);
-			LeveledCauldronBlock.decrementFluidLevel(state, world, pos);
-			return ActionResult.SUCCESS;
+import java.util.List;
+
+public class MilkCauldronBlock extends LayeredCauldronBlock {
+	static final CauldronInteraction.Dispatcher DISPATCHER = CauldronInteractions.newDispatcher("milk");
+	static final CauldronInteraction FILL_FROM_BUCKET = (ignored, world, pos, player, hand, stack) ->
+			CauldronInteractions.emptyBucket(world, pos, player, hand, stack, MilkLib.MILK_CAULDRON.defaultBlockState().setValue(LEVEL, 3), SoundEvents.BUCKET_EMPTY);
+	static final CauldronInteraction EMPTY_TO_BUCKET = (state, world, pos, player, hand, stack) ->
+			CauldronInteractions.fillBucket(state, world, pos, player, hand, stack, new ItemStack(Items.MILK_BUCKET), blockState -> blockState.getValue(LEVEL) == 3, SoundEvents.BUCKET_FILL);
+	static final CauldronInteraction MILKIFY_DYEABLE_ITEM = (state, world, pos, player, hand, stack) -> {
+		if (!world.isClientSide()) {
+			player.setItemInHand(hand, DyedItemColor.applyDyes(stack, List.of(DyeColor.WHITE)));
+			player.awardStat(Stats.CLEAN_ARMOR);
+			LayeredCauldronBlock.lowerFillLevel(state, world, pos);
+			return InteractionResult.SUCCESS;
 		}
-		return ActionResult.PASS_TO_DEFAULT_BLOCK_ACTION;
+		return InteractionResult.TRY_WITH_EMPTY_HAND;
 	};
-	static final CauldronBehavior MILKIFY_SHULKER_BOX = (state, world, pos, player, hand, stack) -> {
-		Block block = Block.getBlockFromItem(stack.getItem());
+	static final CauldronInteraction MILKIFY_SHULKER_BOX = (state, world, pos, player, hand, stack) -> {
+		Block block = Block.byItem(stack.getItem());
 		if ((block instanceof ShulkerBoxBlock)) {
-			if (!world.isClient()) {
-				ItemStack itemStack = stack.copyComponentsToNewStack(Blocks.WHITE_SHULKER_BOX, 1);
-                player.setStackInHand(hand, itemStack);
-				player.incrementStat(Stats.CLEAN_SHULKER_BOX);
-				LeveledCauldronBlock.decrementFluidLevel(state, world, pos);
+			if (!world.isClientSide()) {
+				ItemStack itemStack = stack.transmuteCopy(Blocks.WHITE_SHULKER_BOX, 1);
+                player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, itemStack, false));
+				player.awardStat(Stats.CLEAN_SHULKER_BOX);
+				LayeredCauldronBlock.lowerFillLevel(state, world, pos);
 			}
-			return ActionResult.SUCCESS;
+			return InteractionResult.SUCCESS;
 		}
-		return ActionResult.PASS_TO_DEFAULT_BLOCK_ACTION;
+		return InteractionResult.TRY_WITH_EMPTY_HAND;
 	};
-	static final CauldronBehavior MILKIFY_BANNER = (state, world, pos, player, hand, stack) -> {
-		if (!world.isClient()) {
+	static final CauldronInteraction MILKIFY_BANNER = (state, world, pos, player, hand, stack) -> {
+		if (!world.isClientSide()) {
 			ItemStack itemStack = new ItemStack(Items.WHITE_BANNER);
-			if (!player.getAbilities().creativeMode) {
-				stack.decrement(1);
+			if (!player.getAbilities().instabuild) {
+				stack.shrink(1);
 			}
 
 			if (stack.isEmpty()) {
-				player.setStackInHand(hand, itemStack);
-			} else if (player.getInventory().insertStack(itemStack)) {
-				player.playerScreenHandler.syncState();
+				player.setItemInHand(hand, itemStack);
+			} else if (player.getInventory().add(itemStack)) {
+				player.inventoryMenu.sendAllDataToRemote();
 			} else {
-				player.dropItem(itemStack, false);
+				player.drop(itemStack, false);
 			}
 
-			player.incrementStat(Stats.CLEAN_BANNER);
-			LeveledCauldronBlock.decrementFluidLevel(state, world, pos);
+			player.awardStat(Stats.CLEAN_BANNER);
+			LayeredCauldronBlock.lowerFillLevel(state, world, pos);
 		}
-		return ActionResult.SUCCESS;
+		return InteractionResult.SUCCESS;
 	};
 
-	public MilkCauldronBlock(Settings settings) {
-		super(Biome.Precipitation.NONE, MILK_CAULDRON_BEHAVIOR, settings);
-
+	public MilkCauldronBlock(Properties settings) {
+		super(Biome.Precipitation.NONE, DISPATCHER, settings);
 	}
 
 	@Override
-	protected boolean canBeFilledByDripstone(Fluid fluid) {
+	protected boolean canReceiveStalactiteDrip(@NotNull Fluid fluid) {
 		return fluid instanceof MilkFluid;
 	}
 
 	@Override
-	protected void onEntityCollision(BlockState state, World world, BlockPos pos, Entity entity, EntityCollisionHandler handler, boolean bl) {
-		if (world.isClient()) {
+	protected void entityInside(@NotNull BlockState state, Level world, @NotNull BlockPos pos, @NotNull Entity entity, @NotNull InsideBlockEffectApplier handler, boolean bl) {
+		if (world.isClientSide()) {
 			return;
 		}
-		if (!this.isEntityTouchingFluid(state, pos, entity) || !entity.canModifyAt((ServerWorld) world, pos)) {
+		if (!this.isEntityTouchingFluid(state, pos, entity) || !entity.mayInteract((ServerLevel) world, pos)) {
 			return;
 		}
 		if (entity instanceof LivingEntity livingEntity && MilkLib.tryRemoveRandomEffect(livingEntity)) {
-			decrementFluidLevel(state, world, pos);
+			lowerFillLevel(state, world, pos);
 		}
-		handler.addEvent(CollisionEvent.EXTINGUISH);
+		handler.apply(InsideBlockEffectType.EXTINGUISH);
 	}
 
 	protected boolean isEntityTouchingFluid(BlockState state, BlockPos pos, Entity entity) {
-		return entity.getY() < (double) pos.getY() + this.getFluidHeight(state) && entity.getBoundingBox().maxY > (double) pos.getY() + 0.25;
+		return entity.getY() < (double) pos.getY() + this.getContentHeight(state) && entity.getBoundingBox().maxY > (double) pos.getY() + 0.25;
 	}
 
+	@NotNull
 	@Override
-	protected ItemStack getPickStack(WorldView world, BlockPos pos, BlockState state, boolean includeData) {
-		return Items.CAULDRON.getDefaultStack();
+	protected ItemStack getCloneItemStack(@NotNull LevelReader world, @NotNull BlockPos pos, @NotNull BlockState state, boolean includeData) {
+		return Items.CAULDRON.getDefaultInstance();
 	}
 
-	public static CauldronBehavior addBehavior(CauldronBehavior behavior, Item items) {
-		MILK_CAULDRON_BEHAVIOR.map().put(items, behavior);
+	public static CauldronInteraction addBehavior(CauldronInteraction behavior, Item item) {
+		DISPATCHER.put(item, behavior);
 		return behavior;
 	}
 
-	public static CauldronBehavior addInputToCauldronExchange(ItemStack toEmpty, ItemStack emptied, boolean ignoreComponent) {
-		Item emptyItem = toEmpty.getItem();
-		CauldronBehavior behavior = addBehavior(new InputToCauldronCauldronBehavior(toEmpty, emptied, ignoreComponent), emptyItem);
-		CauldronBehavior.EMPTY_CAULDRON_BEHAVIOR.map().put(emptyItem, behavior);
+	public static void addBehavior(CauldronInteraction behavior, TagKey<Item> tag) {
+		DISPATCHER.put(tag, behavior);
+	}
+
+	public static CauldronInteraction addInputToCauldronExchange(Item toEmpty, Item emptied) {
+		CauldronInteraction behavior = addBehavior(new InputToCauldronCauldronBehavior(toEmpty, emptied), toEmpty);
+		CauldronInteractions.EMPTY.put(toEmpty, behavior);
 		return behavior;
 	}
 
-	public static CauldronBehavior addOutputToItemExchange(ItemStack toFill, ItemStack filled, boolean ignoreComponent) {
-		return addBehavior(new OutputToItemCauldronBehavior(toFill, filled, ignoreComponent), toFill.getItem());
+	public static CauldronInteraction addOutputToItemExchange(Item toFill, Item filled) {
+		return addBehavior(new OutputToItemCauldronBehavior(toFill, filled), toFill);
 	}
 
-	private static boolean typeAndDataEqual(ItemStack stack1, ItemStack stack2, boolean ignoreComponent) {
-		if (ignoreComponent) {
-			return ItemStack.areItemsEqual(stack1, stack2);
-		} else {
-			return ItemStack.areItemsAndComponentsEqual(stack1, stack2);
-		}
-	}
-
-	public record OutputToItemCauldronBehavior(ItemStack toFill, ItemStack filled, boolean ignoreComponent) implements CauldronBehavior {
+	public record OutputToItemCauldronBehavior(Item toFill, Item filled) implements CauldronInteraction {
+		@NotNull
 		@Override
-		public ActionResult interact(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, ItemStack held) {
-			if (!world.isClient() && typeAndDataEqual(held, this.toFill, this.ignoreComponent)) {
+		public InteractionResult interact(@NotNull BlockState state, Level world, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull ItemStack held) {
+			if (!world.isClientSide() && held.is(this.toFill)) {
 				Item item = held.getItem();
-				player.setStackInHand(hand, ItemUsage.exchangeStack(held, player, this.filled.copy()));
-				player.incrementStat(Stats.USE_CAULDRON);
-				player.incrementStat(Stats.USED.getOrCreateStat(item));
-				LeveledCauldronBlock.decrementFluidLevel(state, world, pos);
-				world.playSound(null, pos, SoundEvents.ITEM_BOTTLE_FILL, SoundCategory.BLOCKS, 1.0F, 1.0F);
-				world.emitGameEvent(null, GameEvent.FLUID_PICKUP, pos);
+				player.setItemInHand(hand, ItemUtils.createFilledResult(held, player, this.filled.getDefaultInstance()));
+				player.awardStat(Stats.USE_CAULDRON);
+				player.awardStat(Stats.ITEM_USED.get(item));
+				LayeredCauldronBlock.lowerFillLevel(state, world, pos);
+				world.playSound(null, pos, SoundEvents.BOTTLE_FILL, SoundSource.BLOCKS, 1.0F, 1.0F);
+				world.gameEvent(null, GameEvent.FLUID_PICKUP, pos);
 			}
-			return ActionResult.SUCCESS;
+			return InteractionResult.SUCCESS;
 		}
 	}
 
-	public record InputToCauldronCauldronBehavior(ItemStack toEmpty, ItemStack emptied, boolean ignoreComponent) implements CauldronBehavior {
+	public record InputToCauldronCauldronBehavior(Item toEmpty, Item emptied) implements CauldronInteraction {
+		@NotNull
 		@Override
-		public ActionResult interact(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, ItemStack stack) {
+		public InteractionResult interact(BlockState state, @NotNull Level world, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull ItemStack stack) {
 			Block block = state.getBlock();
-			if ((block == Blocks.CAULDRON || block == MilkLib.MILK_CAULDRON) && (!state.contains(LEVEL) || state.get(LEVEL) != 3) && typeAndDataEqual(stack, this.toEmpty, this.ignoreComponent)) {
-				if (!world.isClient()) {
-					player.setStackInHand(hand, ItemUsage.exchangeStack(stack, player, this.emptied.copy()));
-					player.incrementStat(Stats.USE_CAULDRON);
-					player.incrementStat(Stats.USED.getOrCreateStat(stack.getItem()));
+			if ((block == Blocks.CAULDRON || block == MilkLib.MILK_CAULDRON) && (!state.hasProperty(LEVEL) || state.getValue(LEVEL) != 3) && stack.is(this.toEmpty)) {
+				if (!world.isClientSide()) {
+					player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, this.emptied.getDefaultInstance()));
+					player.awardStat(Stats.USE_CAULDRON);
+					player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
 					if (block == Blocks.CAULDRON) {
-						world.setBlockState(pos, MilkLib.MILK_CAULDRON.getDefaultState().with(LEVEL, 1));
+						world.setBlockAndUpdate(pos, MilkLib.MILK_CAULDRON.defaultBlockState().setValue(LEVEL, 1));
 					} else {
-						world.setBlockState(pos, state.with(LEVEL, state.get(LEVEL) + 1));
+						world.setBlockAndUpdate(pos, state.setValue(LEVEL, state.getValue(LEVEL) + 1));
 					}
-					world.playSound(null, pos, SoundEvents.ITEM_BOTTLE_EMPTY, SoundCategory.BLOCKS, 1.0F, 1.0F);
-					world.emitGameEvent(null, GameEvent.FLUID_PLACE, pos);
+					world.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0F, 1.0F);
+					world.gameEvent(null, GameEvent.FLUID_PLACE, pos);
 				}
-				return ActionResult.SUCCESS;
+				return InteractionResult.SUCCESS;
 			}
-			return ActionResult.PASS_TO_DEFAULT_BLOCK_ACTION;
+			return InteractionResult.TRY_WITH_EMPTY_HAND;
 		}
 	}
 }

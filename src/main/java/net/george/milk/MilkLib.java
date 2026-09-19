@@ -2,9 +2,9 @@ package net.george.milk;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
+import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.fabricmc.fabric.api.registry.FabricBrewingRecipeRegistryBuilder;
+import net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder;
 import net.fabricmc.fabric.api.transfer.v1.fluid.CauldronFluidContent;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
@@ -19,104 +19,107 @@ import net.george.milk.potion.*;
 import net.george.milk.potion.bottle.LingeringMilkBottle;
 import net.george.milk.potion.bottle.MilkBottle;
 import net.george.milk.potion.bottle.SplashMilkBottle;
-import net.minecraft.block.*;
-import net.minecraft.block.cauldron.CauldronBehavior;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ConsumableComponent;
-import net.minecraft.component.type.PotionContentsComponent;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.SpawnGroup;
-import net.minecraft.entity.effect.StatusEffect;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.item.*;
-import net.minecraft.item.consume.UseAction;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.registry.tag.ItemTags;
-import net.minecraft.registry.tag.TagKey;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Identifier;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.cauldron.CauldronInteraction;
+import net.minecraft.core.cauldron.CauldronInteractions;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.item.*;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.component.Consumable;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.MapColor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.function.Function;
 
-import static net.minecraft.item.Items.*;
+import static net.minecraft.world.item.Items.*;
 
-@SuppressWarnings({"unused"})
+@SuppressWarnings({"unused", "UnstableApiUsage"})
 public class MilkLib implements ModInitializer {
 	public static final String MOD_ID = "milk-lib";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-	// tags
-	public static final TagKey<Block> MILK_PLACEMENT_DISALLOWED = TagKey.of(RegistryKeys.BLOCK, id("milk_placement_disallowed"));
-
 	// fluid registries
-	public static MilkFluid STILL_MILK = Registry.register(Registries.FLUID, id("still_milk"), new MilkFluid.Still());
-	public static MilkFluid FLOWING_MILK = Registry.register(Registries.FLUID, id("flowing_milk"), new MilkFluid.Flowing());
+	public static MilkFluid STILL_MILK = Registry.register(BuiltInRegistries.FLUID, id("still_milk"), new MilkFluid.Still());
+	public static MilkFluid FLOWING_MILK = Registry.register(BuiltInRegistries.FLUID, id("flowing_milk"), new MilkFluid.Flowing());
 	public static ParticleTypeSet STILL_MILK_PARTICLES;
 	public static ParticleTypeSet FLOWING_MILK_PARTICLES;
 
 	// block registries
-	public static Block MILK_FLUID_BLOCK = Registry.register(Registries.BLOCK, id("milk_fluid_block"),
-			new FluidBlock(STILL_MILK, AbstractBlock.Settings.copy(Blocks.WATER).mapColor(MapColor.WHITE)
-					.registryKey(RegistryKey.of(RegistryKeys.BLOCK, id("milk_fluid_block")))));
-	public static Block MILK_CAULDRON = Registry.register(Registries.BLOCK, id("milk_cauldron"),
-			new MilkCauldronBlock(AbstractBlock.Settings.copy(Blocks.CAULDRON)
-					.registryKey(RegistryKey.of(RegistryKeys.BLOCK, id("milk_cauldron")))));
+	public static Block MILK_FLUID_BLOCK = Registry.register(BuiltInRegistries.BLOCK, id("milk_fluid_block"),
+			new LiquidBlock(STILL_MILK, BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).mapColor(MapColor.SNOW)
+					.setId(ResourceKey.create(Registries.BLOCK, id("milk_fluid_block")))));
+	public static Block MILK_CAULDRON = Registry.register(BuiltInRegistries.BLOCK, id("milk_cauldron"),
+			new MilkCauldronBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.CAULDRON)
+					.setId(ResourceKey.create(Registries.BLOCK, id("milk_cauldron")))));
 
 	// item registries
 	public static Item MILK_BOTTLE = registerItem("milk_bottle", MilkBottle::new,
-			new Item.Settings()
-					.recipeRemainder(Items.GLASS_BOTTLE)
-					.maxCount(1)
-					.component(DataComponentTypes.CONSUMABLE, ConsumableComponent.builder()
-							.consumeSeconds(1.6F).useAction(UseAction.DRINK).sound(SoundEvents.ENTITY_GENERIC_DRINK)
-							.finishSound(SoundEvents.ENTITY_GENERIC_DRINK).consumeParticles(false).build()));
+			new Item.Properties()
+					.craftRemainder(Items.GLASS_BOTTLE)
+					.stacksTo(1)
+					.component(DataComponents.CONSUMABLE, Consumable.builder()
+							.consumeSeconds(1.6F).animation(ItemUseAnimation.DRINK).sound(SoundEvents.GENERIC_DRINK)
+							.soundAfterConsume(SoundEvents.GENERIC_DRINK).hasConsumeParticles(false).build()));
 	public static Item SPLASH_MILK_BOTTLE = registerItem("splash_milk_bottle", SplashMilkBottle::new,
-			new Item.Settings().maxCount(1));
+			new Item.Properties().stacksTo(1));
 	public static Item LINGERING_MILK_BOTTLE = registerItem("lingering_milk_bottle", LingeringMilkBottle::new,
-			new Item.Settings().maxCount(1));
-	public static Item MILK_ARROW = registerItem("milk_arrow", MilkArrowItem::new, new Item.Settings());
+			new Item.Properties().stacksTo(1));
+	public static Item MILK_ARROW = registerItem("milk_arrow", MilkArrowItem::new, new Item.Properties());
 
 	// entity registries
 	public static EntityType<MilkAreaEffectCloudEntity> MILK_EFFECT_CLOUD_ENTITY_TYPE = Registry.register(
-			Registries.ENTITY_TYPE,
+			BuiltInRegistries.ENTITY_TYPE,
 			id("milk_area_effect_cloud"),
-			EntityType.Builder.<MilkAreaEffectCloudEntity>create(SpawnGroup.MISC)
-					.makeFireImmune()
-					.dimensions(6.0F, 0.5F)
-					.trackingTickInterval(10)
-					.build(RegistryKey.of(RegistryKeys.ENTITY_TYPE, id("milk_area_effect_cloud")))
+			EntityType.Builder.<MilkAreaEffectCloudEntity>createNothing(MobCategory.MISC)
+					.fireImmune()
+					.sized(6.0F, 0.5F)
+					.updateInterval(10)
+					.build(ResourceKey.create(Registries.ENTITY_TYPE, id("milk_area_effect_cloud")))
 	);
 	public static EntityType<MilkArrowEntity> MILK_ARROW_ENTITY_TYPE = Registry.register(
-			Registries.ENTITY_TYPE,
+			BuiltInRegistries.ENTITY_TYPE,
 			id("milk_arrow"),
-			EntityType.Builder.create(MilkArrowEntity::new, SpawnGroup.MISC)
-					.dimensions(0.5F, 0.5F)
-					.dropsNothing()
-					.dimensions(0.5F, 0.5F)
-					.eyeHeight(0.13F).maxTrackingRange(4).trackingTickInterval(20)
-					.build(RegistryKey.of(RegistryKeys.ENTITY_TYPE, id("milk_arrow")))
+			EntityType.Builder.of(MilkArrowEntity::new, MobCategory.MISC)
+					.sized(0.5F, 0.5F)
+					.noLootTable()
+					.sized(0.5F, 0.5F)
+					.eyeHeight(0.13F).clientTrackingRange(4).updateInterval(20)
+					.build(ResourceKey.create(Registries.ENTITY_TYPE, id("milk_arrow")))
 	);
 
 	// effect & potion
-	public static final RegistryEntry.Reference<StatusEffect> RANDOM_PURGE = Registry
-			.registerReference(Registries.STATUS_EFFECT, id("random_purge"), new RandomPurgeEffect());
+	public static final Holder.Reference<MobEffect> RANDOM_PURGE = Registry
+			.registerForHolder(BuiltInRegistries.MOB_EFFECT, id("random_purge"), new RandomPurgeEffect());
 
 	// extra conventional tag key for milk bottles
 	public static final TagKey<Item> MILK_BOTTLES = TagRegistration.ITEM_TAG.registerC("milk_bottle");
 
 	@Override
 	public void onInitialize() {
+		MilkLibTags.register();
+		registerMilkCauldronInteractions();
+
 		DrippableFluidManager.Register register = DrippableFluidManager.getInstance().get(MOD_ID);
 		STILL_MILK_PARTICLES = register.register("still_milk", STILL_MILK);
 		FLOWING_MILK_PARTICLES = register.register("flowing_milk", FLOWING_MILK);
@@ -134,51 +137,68 @@ public class MilkLib implements ModInitializer {
 		FluidStorage.combinedItemApiProvider(LINGERING_MILK_BOTTLE).register(context ->
 				new FullItemFluidStorage(context, bottle -> ItemVariant.of(GLASS_BOTTLE), FluidVariant.of(STILL_MILK), FluidConstants.BOTTLE));
 
-		CauldronFluidContent.registerCauldron(MILK_CAULDRON, STILL_MILK, FluidConstants.BOTTLE, LeveledCauldronBlock.LEVEL);
-		// fill into empty behaviors
-		CauldronBehavior.EMPTY_CAULDRON_BEHAVIOR.map().put(MILK_BUCKET, MilkCauldronBlock.FILL_FROM_BUCKET);
-		CauldronBehavior fillFromMilkBottle = MilkCauldronBlock.addInputToCauldronExchange(
-				MILK_BOTTLE.getDefaultStack(), Items.GLASS_BOTTLE.getDefaultStack(), true);
-		CauldronBehavior.EMPTY_CAULDRON_BEHAVIOR.map().put(MILK_BOTTLE, fillFromMilkBottle);
-		// milk cauldron behaviors
-		MilkCauldronBlock.MILK_CAULDRON_BEHAVIOR.map().put(MILK_BOTTLE, fillFromMilkBottle);
-		CauldronBehavior emptyToBottle = MilkCauldronBlock.addOutputToItemExchange(
-				Items.GLASS_BOTTLE.getDefaultStack(), MILK_BOTTLE.getDefaultStack(), true);
-		MilkCauldronBlock.MILK_CAULDRON_BEHAVIOR.map().put(Items.GLASS_BOTTLE, emptyToBottle);
+		CauldronFluidContent.registerCauldron(MILK_CAULDRON, STILL_MILK, FluidConstants.BOTTLE, LayeredCauldronBlock.LEVEL);
 
 		DispenserBlock.registerBehavior(SPLASH_MILK_BOTTLE, MilkPotionDispenserBehavior.SPLASH);
 		DispenserBlock.registerBehavior(LINGERING_MILK_BOTTLE, MilkPotionDispenserBehavior.LINGERING);
 		DispenserBlock.registerProjectileBehavior(MILK_ARROW);
 
 		/* events */
-		ItemGroupEvents.modifyEntriesEvent(ItemGroups.FOOD_AND_DRINK).register(entries -> {
+		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.FOOD_AND_DRINKS).register(entries -> {
 			entries.getDisplayStacks().removeIf(stack -> {
 				if (!(stack.getItem() instanceof PotionItem)) {
 					return false;
 				}
-				PotionContentsComponent component = stack.get(DataComponentTypes.POTION_CONTENTS);
+				PotionContents component = stack.get(DataComponents.POTION_CONTENTS);
 				if (component == null) {
 					return false;
 				}
 
 				return component.potion()
-						.map(entry -> Registries.POTION.getId(entry.value()))
+						.map(entry -> BuiltInRegistries.POTION.getKey(entry.value()))
 						.map(id -> id.getNamespace().equals(MOD_ID))
 						.orElse(false);
 			});
-			entries.add(MILK_BOTTLE);
-			entries.add(SPLASH_MILK_BOTTLE);
-			entries.add(LINGERING_MILK_BOTTLE);
+			entries.accept(MILK_BOTTLE);
+			entries.accept(SPLASH_MILK_BOTTLE);
+			entries.accept(LINGERING_MILK_BOTTLE);
 		});
-		ItemGroupEvents.modifyEntriesEvent(ItemGroups.COMBAT).register(entries ->
-				entries.add(MILK_ARROW));
+		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(entries ->
+				entries.accept(MILK_ARROW));
+		ItemTooltipCallback.EVENT.register((itemStack, tooltipContext, tooltipType, list) -> {
+			if (itemStack.is(MILK_BOTTLE)) {
+				list.add(Component.translatable("item.milk-lib.milk_bottle.tooltip").withStyle(ChatFormatting.GRAY));
+			} else if (itemStack.is(SPLASH_MILK_BOTTLE)) {
+				list.add(Component.translatable("item.milk-lib.splash_milk_bottle.tooltip").withStyle(ChatFormatting.GRAY));
+			} else if (itemStack.is(LINGERING_MILK_BOTTLE)) {
+				list.add(Component.translatable("item.milk-lib.lingering_milk_bottle.tooltip").withStyle(ChatFormatting.GRAY));
+			}
+		});
+
+		/* recipe */
+		FabricPotionBrewingBuilder.BUILD.register(builder -> {
+			builder.addContainer(MILK_BOTTLE);
+			builder.addContainer(SPLASH_MILK_BOTTLE);
+            builder.addContainerRecipe(MILK_BOTTLE, GUNPOWDER, SPLASH_MILK_BOTTLE);
+            builder.addContainerRecipe(SPLASH_MILK_BOTTLE, DRAGON_BREATH, LINGERING_MILK_BOTTLE);
+        });
+	}
+
+	public static void registerMilkCauldronInteractions() {
+		// fill into empty behaviors
+		CauldronInteractions.EMPTY.put(MILK_BUCKET, MilkCauldronBlock.FILL_FROM_BUCKET);
+		CauldronInteraction fillFromMilkBottle = MilkCauldronBlock.addInputToCauldronExchange(
+				MILK_BOTTLE, Items.GLASS_BOTTLE);
+		CauldronInteractions.EMPTY.put(MILK_BOTTLE, fillFromMilkBottle);
+		// milk cauldron behaviors
+		MilkCauldronBlock.addBehavior(fillFromMilkBottle, MILK_BOTTLE);
+		CauldronInteraction emptyToBottle = MilkCauldronBlock.addOutputToItemExchange(
+				Items.GLASS_BOTTLE, MILK_BOTTLE);
+		MilkCauldronBlock.addBehavior(emptyToBottle, Items.GLASS_BOTTLE);
 
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-			Registries.ITEM.forEach(item -> {
-				if (item.getDefaultStack().isIn(ItemTags.DYEABLE)) {
-					LOGGER.info(String.valueOf(Registries.ITEM.getId(item)));
-					MilkCauldronBlock.addBehavior(MilkCauldronBlock.MILKIFY_DYEABLE_ITEM, item);
-				} else if (item instanceof BannerItem) {
+			BuiltInRegistries.ITEM.forEach(item -> {
+				if (item instanceof BannerItem) {
 					MilkCauldronBlock.addBehavior(MilkCauldronBlock.MILKIFY_BANNER, item);
 				} else if (item instanceof BlockItem blockItem) {
 					if (blockItem.getBlock() instanceof ShulkerBoxBlock) {
@@ -186,26 +206,10 @@ public class MilkLib implements ModInitializer {
 					}
 				}
 			});
+			MilkCauldronBlock.addBehavior(MilkCauldronBlock.MILKIFY_DYEABLE_ITEM, ItemTags.CAULDRON_CAN_REMOVE_DYE);
 			MilkCauldronBlock.addBehavior(MilkCauldronBlock.FILL_FROM_BUCKET, Items.MILK_BUCKET);
 			MilkCauldronBlock.addBehavior(MilkCauldronBlock.EMPTY_TO_BUCKET, Items.BUCKET);
 		});
-
-		ItemTooltipCallback.EVENT.register((itemStack, tooltipContext, tooltipType, list) -> {
-			if (itemStack.isOf(MILK_BOTTLE)) {
-				list.add(Text.translatable("item.milk-lib.milk_bottle.tooltip").formatted(Formatting.GRAY));
-			} else if (itemStack.isOf(SPLASH_MILK_BOTTLE)) {
-				list.add(Text.translatable("item.milk-lib.splash_milk_bottle.tooltip").formatted(Formatting.GRAY));
-			} else if (itemStack.isOf(LINGERING_MILK_BOTTLE)) {
-				list.add(Text.translatable("item.milk-lib.lingering_milk_bottle.tooltip").formatted(Formatting.GRAY));
-			}
-		});
-
-		FabricBrewingRecipeRegistryBuilder.BUILD.register(builder -> {
-			builder.registerPotionType(MILK_BOTTLE);
-			builder.registerPotionType(SPLASH_MILK_BOTTLE);
-            builder.registerItemRecipe(MILK_BOTTLE, GUNPOWDER, SPLASH_MILK_BOTTLE);
-            builder.registerItemRecipe(SPLASH_MILK_BOTTLE, DRAGON_BREATH, LINGERING_MILK_BOTTLE);
-        });
 	}
 
 	public static boolean isMilk(BlockState state) {
@@ -213,7 +217,7 @@ public class MilkLib implements ModInitializer {
 	}
 
 	public static boolean isMilk(FluidState state) {
-		return (STILL_MILK != null && state.isOf(STILL_MILK)) || (FLOWING_MILK != null && state.isOf(FLOWING_MILK));
+		return (STILL_MILK != null && state.is(STILL_MILK)) || (FLOWING_MILK != null && state.is(FLOWING_MILK));
 	}
 
 	public static boolean isMilkBottle(Item item) {
@@ -221,28 +225,28 @@ public class MilkLib implements ModInitializer {
 	}
 
 	public static boolean tryRemoveRandomEffect(LivingEntity user) {
-		if (user.getEntityWorld().isClient()) {
+		if (user.level().isClientSide()) {
 			return false;
 		}
-		List<StatusEffectInstance> effects = user.getStatusEffects().stream()
-				.filter(instance -> instance.getEffectType() != RANDOM_PURGE).toList();
+		List<MobEffectInstance> effects = user.getActiveEffects().stream()
+				.filter(instance -> instance.getEffect() != RANDOM_PURGE).toList();
 		if (effects.isEmpty()) {
 			return false;
 		}
-		StatusEffectInstance effect = effects.get(user.getEntityWorld().random.nextInt(effects.size()));
-		return user.removeStatusEffect(effect.getEffectType());
+		MobEffectInstance effect = effects.get(user.level().getRandom().nextInt(effects.size()));
+		return user.removeEffect(effect.getEffect());
 	}
 
-	public static StatusEffectInstance createRandomPurgeEffect() {
-		return new StatusEffectInstance(RANDOM_PURGE, 10);
+	public static MobEffectInstance createRandomPurgeEffect() {
+		return new MobEffectInstance(RANDOM_PURGE, 10);
 	}
 
 	public static Identifier id(String name) {
-		return Identifier.of(MOD_ID, name);
+		return Identifier.fromNamespaceAndPath(MOD_ID, name);
 	}
 
-	private static Item registerItem(String name, Function<Item.Settings, Item> itemFactory, Item.Settings settings) {
+	private static Item registerItem(String name, Function<Item.Properties, Item> itemFactory, Item.Properties settings) {
 		Identifier id = id(name);
-		return Registry.register(Registries.ITEM, id, itemFactory.apply(settings.registryKey(RegistryKey.of(RegistryKeys.ITEM, id))));
+		return Registry.register(BuiltInRegistries.ITEM, id, itemFactory.apply(settings.setId(ResourceKey.create(Registries.ITEM, id))));
 	}
 }

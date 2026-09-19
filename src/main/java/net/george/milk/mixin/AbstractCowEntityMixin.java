@@ -1,36 +1,36 @@
 package net.george.milk.mixin;
 
 import net.george.milk.MilkLib;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.passive.AbstractCowEntity;
-import net.minecraft.entity.passive.AnimalEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUsage;
-import net.minecraft.item.Items;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.world.World;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.cow.AbstractCow;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemUtils;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(AbstractCowEntity.class)
-public abstract class AbstractCowEntityMixin extends AnimalEntity {
-	protected AbstractCowEntityMixin(EntityType<? extends AnimalEntity> entityType, World world) {
+@Mixin(AbstractCow.class)
+public abstract class AbstractCowEntityMixin extends Animal {
+	protected AbstractCowEntityMixin(EntityType<? extends Animal> entityType, Level world) {
 		super(entityType, world);
 	}
 
-	@Inject(at = @At("HEAD"), method = "interactMob", cancellable = true)
-	public void milkLib$interactMob(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
-		ItemStack itemStack = player.getStackInHand(hand);
-		if (itemStack.isOf(Items.GLASS_BOTTLE) && !this.isBaby() && MilkLib.MILK_BOTTLE != null) {
-			player.playSound(SoundEvents.ENTITY_COW_MILK, 1.0F, 1.0F);
-			ItemStack exchanged = ItemUsage.exchangeStack(itemStack, player, MilkLib.MILK_BOTTLE.getDefaultStack());
-			player.setStackInHand(hand, exchanged);
-			cir.setReturnValue(ActionResult.SUCCESS);
+	@Inject(at = @At("HEAD"), method = "mobInteract", cancellable = true)
+	public void milkLib$interactMob(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
+		ItemStack itemStack = player.getItemInHand(hand);
+		if (itemStack.is(Items.GLASS_BOTTLE) && !this.isBaby() && MilkLib.MILK_BOTTLE != null) {
+			player.playSound(SoundEvents.COW_MILK, 1.0F, 1.0F);
+			ItemStack exchanged = ItemUtils.createFilledResult(itemStack, player, MilkLib.MILK_BOTTLE.getDefaultInstance());
+			player.setItemInHand(hand, exchanged);
+			cir.setReturnValue(InteractionResult.SUCCESS);
 		}
 	}
 }

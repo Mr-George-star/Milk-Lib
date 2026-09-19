@@ -1,30 +1,33 @@
 package net.george.milk.potion;
 
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.projectile.PersistentProjectileEntity;
-import net.minecraft.entity.projectile.ProjectileEntity;
-import net.minecraft.item.ArrowItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Position;
-import net.minecraft.world.World;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Position;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
+import net.minecraft.world.item.ArrowItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class MilkArrowItem extends ArrowItem {
-    public MilkArrowItem(Item.Settings settings) {
+    public MilkArrowItem(Item.Properties settings) {
         super(settings);
     }
 
+    @NotNull
     @Override
-    public PersistentProjectileEntity createArrow(World world, ItemStack stack, LivingEntity shooter, @Nullable ItemStack shotFrom) {
+    public AbstractArrow createArrow(@NotNull Level world, ItemStack stack, @NotNull LivingEntity shooter, @Nullable ItemStack shotFrom) {
         return new MilkArrowEntity(shooter, world, stack.copyWithCount(1), shotFrom);
     }
 
+    @NotNull
     @Override
-    public ProjectileEntity createEntity(World world, Position pos, ItemStack stack, Direction direction) {
-        MilkArrowEntity arrow = new MilkArrowEntity(pos.getX(), pos.getY(), pos.getZ(), world, stack.copyWithCount(1), null);
-        arrow.pickupType = PersistentProjectileEntity.PickupPermission.ALLOWED;
+    public Projectile asProjectile(@NotNull Level world, Position pos, ItemStack stack, @NotNull Direction direction) {
+        MilkArrowEntity arrow = new MilkArrowEntity(pos.x(), pos.y(), pos.z(), world, stack.copyWithCount(1), null);
+        arrow.pickup = AbstractArrow.Pickup.ALLOWED;
         return arrow;
     }
 }

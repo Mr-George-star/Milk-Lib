@@ -1,23 +1,23 @@
 package net.george.milk.mixin;
 
 import com.google.common.annotations.VisibleForTesting;
+import net.george.milk.api.DrippableFluid;
 import net.george.milk.api.DrippableFluidManager;
-import net.george.milk.api.DripstoneInteractingFluid;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.PointedDripstoneBlock;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.particle.ParticleEffect;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldAccess;
-import net.minecraft.world.WorldEvents;
-import net.minecraft.world.WorldView;
-import net.minecraft.world.event.GameEvent;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LevelEvent;
+import net.minecraft.world.level.block.PointedDripstoneBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -32,35 +32,35 @@ import java.util.Optional;
 @Mixin(value = PointedDripstoneBlock.class, priority = 429) // random number to apply overwriting early, let other mods inject
 public abstract class PointedDripstoneBlockMixin {
     @Shadow
-    private static boolean isHeldByPointedDripstone(BlockState state, WorldView world, BlockPos pos) {
+    private static boolean isStalactiteStartPos(BlockState state, LevelReader level, BlockPos pos) {
         throw new RuntimeException("Mixin application failed!");
     }
 
     @Shadow
     @Nullable
-    private static BlockPos getTipPos(BlockState state, WorldAccess world, BlockPos pos, int range, boolean allowMerged) {
+    private static BlockPos findTip(BlockState dripstoneState, LevelAccessor level, BlockPos dripstonePos, int maxSearchLength, boolean includeMergedTip) {
         throw new RuntimeException("Mixin application failed!");
     }
 
     @Shadow
-    private static ParticleEffect getParticleEffect(World world, Fluid fluid, BlockPos pos) {
+    private static ParticleOptions getDripParticle(Level level, Fluid fluidAbove, BlockPos posAbove) {
         throw new RuntimeException("Mixin application failed!");
     }
 
     @Shadow
     @Nullable
-    private static BlockPos getCauldronPos(World world, BlockPos pos, Fluid fluid) {
+    private static BlockPos findFillableCauldronBelowStalactiteTip(Level level, BlockPos stalactiteTipPos, Fluid fluid) {
         throw new RuntimeException("Mixin application failed!");
     }
 
     @Shadow
-    private static Optional<PointedDripstoneBlock.DrippingFluid> getFluid(World world, BlockPos pos, BlockState state) {
+    private static Optional<PointedDripstoneBlock.FluidInfo> getFluidAboveStalactite(Level level, BlockPos stalactitePos, BlockState stalactiteState) {
         throw new RuntimeException("Mixin application failed!");
     }
 
     @Shadow
     @Final
-    private static double DOWN_TIP_Y;
+    private static double STALACTITE_DRIP_START_PIXEL;
 
     /**
      * @author Tropheus Jay
@@ -68,10 +68,10 @@ public abstract class PointedDripstoneBlockMixin {
      */
     @VisibleForTesting
     @Overwrite
-    public static void dripTick(BlockState state, ServerWorld world, BlockPos pos, float dripChance) {
+    public static void maybeTransferFluid(BlockState state, ServerLevel world, BlockPos pos, float dripChance) {
         // removed outside if statement to handle custom fluid chances
-        if (isHeldByPointedDripstone(state, world, pos)) {
-            Optional<PointedDripstoneBlock.DrippingFluid> optional = getFluid(world, pos, state);
+        if (isStalactiteStartPos(state, world, pos)) {
+            Optional<PointedDripstoneBlock.FluidInfo> optional = getFluidAboveStalactite(world, pos, state);
             if (optional.isPresent()) {
                 Fluid fluid = optional.get().fluid();
                 float f;
@@ -80,7 +80,7 @@ public abstract class PointedDripstoneBlockMixin {
                 } else if (fluid == Fluids.LAVA) {
                     f = 0.05859375F;
                 } else {
-                    if (fluid instanceof DripstoneInteractingFluid customFluid) {
+                    if (fluid instanceof DrippableFluid customFluid) {
                         f = customFluid.getFluidDripChance(world, optional.get());
                     } else {
                         return;
@@ -88,24 +88,24 @@ public abstract class PointedDripstoneBlockMixin {
                 }
 
                 if (!(dripChance >= f)) {
-                    BlockPos blockPos = getTipPos(state, world, pos, 11, false);
+                    BlockPos blockPos = findTip(state, world, pos, 11, false);
                     if (blockPos != null) {
-                        if (optional.get().sourceState().isOf(Blocks.MUD) && fluid == Fluids.WATER) {
-                            BlockState blockState = Blocks.CLAY.getDefaultState();
-                            world.setBlockState(optional.get().pos(), blockState);
-                            Block.pushEntitiesUpBeforeBlockChange(
+                        if (optional.get().sourceState().is(Blocks.MUD) && fluid == Fluids.WATER) {
+                            BlockState blockState = Blocks.CLAY.defaultBlockState();
+                            world.setBlockAndUpdate(optional.get().pos(), blockState);
+                            Block.pushEntitiesUp(
                                     optional.get().sourceState(), blockState, world, optional.get().pos()
                             );
-                            world.emitGameEvent(GameEvent.BLOCK_CHANGE, optional.get().pos(), GameEvent.Emitter.of(blockState));
-                            world.syncWorldEvent(WorldEvents.POINTED_DRIPSTONE_DRIPS, blockPos, 0);
+                            world.gameEvent(GameEvent.BLOCK_CHANGE, optional.get().pos(), GameEvent.Context.of(blockState));
+                            world.levelEvent(LevelEvent.DRIPSTONE_DRIP, blockPos, 0);
                         } else {
-                            BlockPos blockPos2 = getCauldronPos(world, blockPos, fluid);
+                            BlockPos blockPos2 = findFillableCauldronBelowStalactiteTip(world, blockPos, fluid);
                             if (blockPos2 != null) {
-                                world.syncWorldEvent(WorldEvents.POINTED_DRIPSTONE_DRIPS, blockPos, 0);
+                                world.levelEvent(LevelEvent.DRIPSTONE_DRIP, blockPos, 0);
                                 int i = blockPos.getY() - blockPos2.getY();
                                 int j = 50 + i;
                                 BlockState blockState2 = world.getBlockState(blockPos2);
-                                world.scheduleBlockTick(blockPos2, blockState2.getBlock(), j);
+                                world.scheduleTick(blockPos2, blockState2.getBlock(), j);
                             }
                         }
                     }
@@ -119,18 +119,18 @@ public abstract class PointedDripstoneBlockMixin {
      * @author Tropheus Jay
      */
     @Overwrite
-    private static void createParticle(World world, BlockPos pos, BlockState state, Fluid fluid, BlockPos fluidPos) {
-        Vec3d vec3d = state.getModelOffset(pos);
+    private static void spawnDripParticle(Level world, BlockPos pos, BlockState state, Fluid fluid, BlockPos fluidPos) {
+        Vec3 vec3d = state.getOffset(pos);
         double x = pos.getX() + 0.5F + vec3d.x;
-        double y = pos.getY() + DOWN_TIP_Y - 0.0625F;
+        double y = pos.getY() + STALACTITE_DRIP_START_PIXEL - 0.0625F;
         double z = pos.getZ() + 0.5F + vec3d.z;
-        ParticleEffect particleEffect;
-        if (fluid instanceof DripstoneInteractingFluid interactingFluid) {
+        ParticleOptions particleEffect;
+        if (fluid instanceof DrippableFluid interactingFluid) {
             particleEffect = DrippableFluidManager.getInstance().getSet(interactingFluid).hang();
         } else {
-            particleEffect = getParticleEffect(world, fluid, fluidPos);
+            particleEffect = getDripParticle(world, fluid, fluidPos);
         }
-        world.addParticleClient(particleEffect, x, y, z, 0.0F, 0.0F, 0.0F);
+        world.addParticle(particleEffect, x, y, z, 0.0F, 0.0F, 0.0F);
     }
 
     /**
@@ -139,18 +139,18 @@ public abstract class PointedDripstoneBlockMixin {
      */
     @Overwrite
     private static boolean canGrow(BlockState dripstoneBlockState, BlockState fluidState) {
-        Fluid fluid = fluidState.getFluidState().getFluid();
-        boolean growsDripstone = fluidState.isOf(Blocks.WATER);
-        if (fluid instanceof DripstoneInteractingFluid interactingFluid) {
+        Fluid fluid = fluidState.getFluidState().getType();
+        boolean growsDripstone = fluidState.is(Blocks.WATER);
+        if (fluid instanceof DrippableFluid interactingFluid) {
             growsDripstone = interactingFluid.growsDripstone(fluidState);
         }
 
-        return dripstoneBlockState.isOf(Blocks.DRIPSTONE_BLOCK) && growsDripstone && fluidState.getFluidState().isStill();
+        return dripstoneBlockState.is(Blocks.DRIPSTONE_BLOCK) && growsDripstone && fluidState.getFluidState().isSource();
     }
 
-    @Inject(method = "isFluidLiquid", at = @At("HEAD"), cancellable = true)
-    private static void milkLib$makeCustomFluidsValid(Fluid fluid, CallbackInfoReturnable<Boolean> cir) {
-        if (fluid instanceof DripstoneInteractingFluid) {
+    @Inject(method = "canFillCauldron", at = @At("HEAD"), cancellable = true)
+    private static void milkLib$makeCustomFluidsValid(Fluid fluidAbove, CallbackInfoReturnable<Boolean> cir) {
+        if (fluidAbove instanceof DrippableFluid) {
             cir.setReturnValue(true);
         }
     }
