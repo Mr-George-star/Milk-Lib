@@ -15,6 +15,7 @@ import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownSplas
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.DispenserBlock;
+import net.minecraft.world.level.block.LevelEvent;
 import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("resource")
@@ -52,7 +53,7 @@ public enum MilkPotionDispenserBehavior implements DispenseItemBehavior {
 
 			@Override
 			protected void playSound(@NotNull BlockSource pointer) {
-				pointer.level().levelEvent(1002, pointer.pos(), 0);
+				pointer.level().levelEvent(LevelEvent.SOUND_DISPENSER_PROJECTILE_LAUNCH, pointer.pos(), 0);
 			}
 		}).dispense(blockPointer, itemStack);
 	}

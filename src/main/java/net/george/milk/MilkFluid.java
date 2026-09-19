@@ -104,7 +104,7 @@ public abstract class MilkFluid extends FlowingFluid implements DrippableFluid {
     }
 
     @Override
-    public boolean growsDripstone(BlockState state) {
+    public boolean growsDripstone(FluidState state) {
         return true;
     }
 

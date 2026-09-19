@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.CauldronBlock;
 import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.level.block.PointedDripstoneBlock.FluidInfo;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
 
 @SuppressWarnings("unused")
 public interface DrippableFluid {
@@ -23,7 +24,7 @@ public interface DrippableFluid {
     /**
      * @return true if this fluid should cause pointed dripstone to grow downwards when placed above
      */
-    boolean growsDripstone(BlockState state);
+    boolean growsDripstone(FluidState state);
 
     /**
      * The color, in integer form, of the particle created by this fluid.

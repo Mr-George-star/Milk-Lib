@@ -1,25 +1,23 @@
 package net.george.milk.mixin;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
 import net.george.milk.api.DrippableFluid;
 import net.george.milk.api.DrippableFluidManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.LevelEvent;
-import net.minecraft.world.level.block.PointedDripstoneBlock;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
@@ -30,21 +28,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.Optional;
 
 @Mixin(value = PointedDripstoneBlock.class, priority = 429) // random number to apply overwriting early, let other mods inject
-public abstract class PointedDripstoneBlockMixin {
-    @Shadow
-    private static boolean isStalactiteStartPos(BlockState state, LevelReader level, BlockPos pos) {
-        throw new RuntimeException("Mixin application failed!");
-    }
-
-    @Shadow
-    @Nullable
-    private static BlockPos findTip(BlockState dripstoneState, LevelAccessor level, BlockPos dripstonePos, int maxSearchLength, boolean includeMergedTip) {
-        throw new RuntimeException("Mixin application failed!");
-    }
-
-    @Shadow
-    private static ParticleOptions getDripParticle(Level level, Fluid fluidAbove, BlockPos posAbove) {
-        throw new RuntimeException("Mixin application failed!");
+public abstract class PointedDripstoneBlockMixin extends SpeleothemBlock {
+    public PointedDripstoneBlockMixin(BlockState blockToGrowOn, Properties properties) {
+        super(blockToGrowOn, properties);
     }
 
     @Shadow
@@ -57,10 +43,6 @@ public abstract class PointedDripstoneBlockMixin {
     private static Optional<PointedDripstoneBlock.FluidInfo> getFluidAboveStalactite(Level level, BlockPos stalactitePos, BlockState stalactiteState) {
         throw new RuntimeException("Mixin application failed!");
     }
-
-    @Shadow
-    @Final
-    private static double STALACTITE_DRIP_START_PIXEL;
 
     /**
      * @author Tropheus Jay
@@ -115,37 +97,30 @@ public abstract class PointedDripstoneBlockMixin {
     }
 
     /**
-     * @reason get particle effect for other fluids, requires access to the fluid gotten from getDripFluid
+     * Get particle effect for other fluids
      * @author Tropheus Jay
      */
-    @Overwrite
-    private static void spawnDripParticle(Level world, BlockPos pos, BlockState state, Fluid fluid, BlockPos fluidPos) {
-        Vec3 vec3d = state.getOffset(pos);
-        double x = pos.getX() + 0.5F + vec3d.x;
-        double y = pos.getY() + STALACTITE_DRIP_START_PIXEL - 0.0625F;
-        double z = pos.getZ() + 0.5F + vec3d.z;
-        ParticleOptions particleEffect;
-        if (fluid instanceof DrippableFluid interactingFluid) {
-            particleEffect = DrippableFluidManager.getInstance().getSet(interactingFluid).hang();
-        } else {
-            particleEffect = getDripParticle(world, fluid, fluidPos);
+    @WrapOperation(
+            method = "spawnDripParticle(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/material/Fluid;Lnet/minecraft/core/BlockPos;)V",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/PointedDripstoneBlock;getDripParticle(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/material/Fluid;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/core/particles/ParticleOptions;")
+    )
+    private static ParticleOptions milkLib$spawnDripParticle(Level level, Fluid fluidAbove, BlockPos posAbove, Operation<ParticleOptions> original) {
+        if (fluidAbove instanceof DrippableFluid drippableFluid) {
+            return DrippableFluidManager.getInstance().getSet(drippableFluid).hang();
         }
-        world.addParticle(particleEffect, x, y, z, 0.0F, 0.0F, 0.0F);
+        return original.call(level, fluidAbove, posAbove);
     }
 
     /**
-     * @reason allow fluids other than water to grow dripstone
+     * Allow fluids other than water to grow dripstone
      * @author Tropheus Jay
      */
-    @Overwrite
-    private static boolean canGrow(BlockState dripstoneBlockState, BlockState fluidState) {
-        Fluid fluid = fluidState.getFluidState().getType();
-        boolean growsDripstone = fluidState.is(Blocks.WATER);
-        if (fluid instanceof DrippableFluid interactingFluid) {
-            growsDripstone = interactingFluid.growsDripstone(fluidState);
+    @ModifyReturnValue(method = "canGrow", at = @At(value = "RETURN"))
+    private boolean milkLib$canGrow(boolean original, @Local(name = "fluidState") FluidState fluidState) {
+        if (fluidState.getType() instanceof DrippableFluid drippableFluid) {
+            return original && drippableFluid.growsDripstone(fluidState);
         }
-
-        return dripstoneBlockState.is(Blocks.DRIPSTONE_BLOCK) && growsDripstone && fluidState.getFluidState().isSource();
+        return original;
     }
 
     @Inject(method = "canFillCauldron", at = @At("HEAD"), cancellable = true)

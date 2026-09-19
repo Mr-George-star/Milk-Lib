@@ -12,7 +12,6 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.fluid.base.EmptyItemFluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.base.FullItemFluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
-import net.fabricmc.fabric.impl.tag.convention.v2.TagRegistration;
 import net.george.milk.api.DrippableFluidManager;
 import net.george.milk.api.ParticleTypeSet;
 import net.george.milk.potion.*;
@@ -26,13 +25,11 @@ import net.minecraft.core.cauldron.CauldronInteraction;
 import net.minecraft.core.cauldron.CauldronInteractions;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityType;
@@ -54,66 +51,56 @@ import java.util.function.Function;
 
 import static net.minecraft.world.item.Items.*;
 
-@SuppressWarnings({"unused", "UnstableApiUsage"})
+@SuppressWarnings("unused")
 public class MilkLib implements ModInitializer {
 	public static final String MOD_ID = "milk-lib";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	// fluid registries
-	public static MilkFluid STILL_MILK = Registry.register(BuiltInRegistries.FLUID, id("still_milk"), new MilkFluid.Still());
-	public static MilkFluid FLOWING_MILK = Registry.register(BuiltInRegistries.FLUID, id("flowing_milk"), new MilkFluid.Flowing());
+	public static MilkFluid STILL_MILK = Registry.register(BuiltInRegistries.FLUID,
+			MilkLibKeys.STILL_MILK, new MilkFluid.Still());
+	public static MilkFluid FLOWING_MILK = Registry.register(BuiltInRegistries.FLUID,
+			MilkLibKeys.FLOWING_MILK, new MilkFluid.Flowing());
 	public static ParticleTypeSet STILL_MILK_PARTICLES;
 	public static ParticleTypeSet FLOWING_MILK_PARTICLES;
 
 	// block registries
-	public static Block MILK_FLUID_BLOCK = Registry.register(BuiltInRegistries.BLOCK, id("milk_fluid_block"),
-			new LiquidBlock(STILL_MILK, BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).mapColor(MapColor.SNOW)
-					.setId(ResourceKey.create(Registries.BLOCK, id("milk_fluid_block")))));
-	public static Block MILK_CAULDRON = Registry.register(BuiltInRegistries.BLOCK, id("milk_cauldron"),
-			new MilkCauldronBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.CAULDRON)
-					.setId(ResourceKey.create(Registries.BLOCK, id("milk_cauldron")))));
+	public static Block MILK_FLUID_BLOCK = registerBlock(MilkLibKeys.MILK_FLUID_BLOCK,
+			settings -> new LiquidBlock(STILL_MILK, settings),
+			BlockBehaviour.Properties.ofFullCopy(Blocks.WATER).mapColor(MapColor.SNOW)
+	);
+	public static Block MILK_CAULDRON = registerBlock(MilkLibKeys.MILK_CAULDRON,
+			MilkCauldronBlock::new, BlockBehaviour.Properties.ofFullCopy(Blocks.CAULDRON));
 
 	// item registries
-	public static Item MILK_BOTTLE = registerItem("milk_bottle", MilkBottle::new,
+	public static Item MILK_BOTTLE = registerItem(MilkLibKeys.MILK_BOTTLE, MilkBottle::new,
 			new Item.Properties()
 					.craftRemainder(Items.GLASS_BOTTLE)
 					.stacksTo(1)
 					.component(DataComponents.CONSUMABLE, Consumable.builder()
 							.consumeSeconds(1.6F).animation(ItemUseAnimation.DRINK).sound(SoundEvents.GENERIC_DRINK)
 							.soundAfterConsume(SoundEvents.GENERIC_DRINK).hasConsumeParticles(false).build()));
-	public static Item SPLASH_MILK_BOTTLE = registerItem("splash_milk_bottle", SplashMilkBottle::new,
+	public static Item SPLASH_MILK_BOTTLE = registerItem(MilkLibKeys.SPLASH_MILK_BOTTLE, SplashMilkBottle::new,
 			new Item.Properties().stacksTo(1));
-	public static Item LINGERING_MILK_BOTTLE = registerItem("lingering_milk_bottle", LingeringMilkBottle::new,
+	public static Item LINGERING_MILK_BOTTLE = registerItem(MilkLibKeys.LINGERING_MILK_BOTTLE, LingeringMilkBottle::new,
 			new Item.Properties().stacksTo(1));
-	public static Item MILK_ARROW = registerItem("milk_arrow", MilkArrowItem::new, new Item.Properties());
+	public static Item MILK_ARROW = registerItem(MilkLibKeys.MILK_ARROW, MilkArrowItem::new, new Item.Properties());
 
 	// entity registries
-	public static EntityType<MilkAreaEffectCloudEntity> MILK_EFFECT_CLOUD_ENTITY_TYPE = Registry.register(
-			BuiltInRegistries.ENTITY_TYPE,
-			id("milk_area_effect_cloud"),
-			EntityType.Builder.<MilkAreaEffectCloudEntity>createNothing(MobCategory.MISC)
-					.fireImmune()
-					.sized(6.0F, 0.5F)
-					.updateInterval(10)
-					.build(ResourceKey.create(Registries.ENTITY_TYPE, id("milk_area_effect_cloud")))
-	);
 	public static EntityType<MilkArrowEntity> MILK_ARROW_ENTITY_TYPE = Registry.register(
 			BuiltInRegistries.ENTITY_TYPE,
-			id("milk_arrow"),
+			MilkLibKeys.MILK_ARROW_ENTITY_TYPE,
 			EntityType.Builder.of(MilkArrowEntity::new, MobCategory.MISC)
 					.sized(0.5F, 0.5F)
 					.noLootTable()
 					.sized(0.5F, 0.5F)
 					.eyeHeight(0.13F).clientTrackingRange(4).updateInterval(20)
-					.build(ResourceKey.create(Registries.ENTITY_TYPE, id("milk_arrow")))
+					.build(MilkLibKeys.MILK_ARROW_ENTITY_TYPE)
 	);
 
 	// effect & potion
 	public static final Holder.Reference<MobEffect> RANDOM_PURGE = Registry
 			.registerForHolder(BuiltInRegistries.MOB_EFFECT, id("random_purge"), new RandomPurgeEffect());
-
-	// extra conventional tag key for milk bottles
-	public static final TagKey<Item> MILK_BOTTLES = TagRegistration.ITEM_TAG.registerC("milk_bottle");
 
 	@Override
 	public void onInitialize() {
@@ -245,8 +232,15 @@ public class MilkLib implements ModInitializer {
 		return Identifier.fromNamespaceAndPath(MOD_ID, name);
 	}
 
-	private static Item registerItem(String name, Function<Item.Properties, Item> itemFactory, Item.Properties settings) {
-		Identifier id = id(name);
-		return Registry.register(BuiltInRegistries.ITEM, id, itemFactory.apply(settings.setId(ResourceKey.create(Registries.ITEM, id))));
+	private static Block registerBlock(ResourceKey<Block> key,
+									   Function<BlockBehaviour.Properties, Block> blockFactory,
+									   BlockBehaviour.Properties settings) {
+		return Registry.register(BuiltInRegistries.BLOCK, key, blockFactory.apply(settings.setId(key)));
+	}
+
+	private static Item registerItem(ResourceKey<Item> key,
+									 Function<Item.Properties, Item> itemFactory,
+									 Item.Properties settings) {
+		return Registry.register(BuiltInRegistries.ITEM, key, itemFactory.apply(settings.setId(key)));
 	}
 }

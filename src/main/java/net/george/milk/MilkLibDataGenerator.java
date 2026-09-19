@@ -10,7 +10,6 @@ import net.fabricmc.fabric.api.tag.convention.v2.ConventionalFluidTags;
 import net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags;
 import net.george.milk.api.DrippableFluidManager;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.RecipeProvider;
@@ -57,7 +56,7 @@ public class MilkLibDataGenerator implements DataGeneratorEntrypoint {
         protected void addTags(@NotNull HolderLookup.Provider registries) {
             this.builder(MilkLibTags.MILK_PLACEMENT_DISALLOWED);
             this.builder(BlockTags.MINEABLE_WITH_PICKAXE)
-                    .add(MilkLib.MILK_CAULDRON.properties().blockIdOrThrow());
+                    .add(MilkLibKeys.MILK_CAULDRON);
         }
     }
 
@@ -68,12 +67,14 @@ public class MilkLibDataGenerator implements DataGeneratorEntrypoint {
 
         @Override
         protected void addTags(@NotNull HolderLookup.Provider registries) {
+            this.builder(MilkLibTags.MILK_BOTTLES)
+                    .add(MilkLibKeys.MILK_BOTTLE)
+                    .add(MilkLibKeys.SPLASH_MILK_BOTTLE)
+                    .add(MilkLibKeys.LINGERING_MILK_BOTTLE);
             this.builder(ConventionalItemTags.MILK_DRINKS)
-                    .add(BuiltInRegistries.ITEM.getResourceKey(MilkLib.MILK_BOTTLE).orElseThrow())
-                    .add(BuiltInRegistries.ITEM.getResourceKey(MilkLib.SPLASH_MILK_BOTTLE).orElseThrow())
-                    .add(BuiltInRegistries.ITEM.getResourceKey(MilkLib.LINGERING_MILK_BOTTLE).orElseThrow());
+                    .addOptionalTag(MilkLibTags.MILK_BOTTLES);
             this.builder(ItemTags.ARROWS)
-                    .add(BuiltInRegistries.ITEM.getResourceKey(MilkLib.MILK_ARROW).orElseThrow());
+                    .add(MilkLibKeys.MILK_ARROW);
         }
     }
 
@@ -85,8 +86,8 @@ public class MilkLibDataGenerator implements DataGeneratorEntrypoint {
         @Override
         protected void addTags(@NotNull HolderLookup.Provider registries) {
             this.builder(MilkLibTags.MILK)
-                    .add(BuiltInRegistries.FLUID.getResourceKey(MilkLib.FLOWING_MILK).orElseThrow())
-                    .add(BuiltInRegistries.FLUID.getResourceKey(MilkLib.STILL_MILK).orElseThrow());
+                    .add(MilkLibKeys.STILL_MILK)
+                    .add(MilkLibKeys.FLOWING_MILK);
             this.builder(ConventionalFluidTags.MILK)
                     .addOptionalTag(MilkLibTags.MILK);
             this.builder(FluidTags.WATER)
@@ -102,7 +103,7 @@ public class MilkLibDataGenerator implements DataGeneratorEntrypoint {
         @Override
         protected void addTags(@NotNull HolderLookup.Provider registries) {
             this.builder(EntityTypeTags.ARROWS)
-                    .add(BuiltInRegistries.ENTITY_TYPE.getResourceKey(MilkLib.MILK_ARROW_ENTITY_TYPE).orElseThrow());
+                    .add(MilkLibKeys.MILK_ARROW_ENTITY_TYPE);
         }
     }
 

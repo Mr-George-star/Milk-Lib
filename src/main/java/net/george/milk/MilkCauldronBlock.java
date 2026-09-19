@@ -50,7 +50,7 @@ public class MilkCauldronBlock extends LayeredCauldronBlock {
 		Block block = Block.byItem(stack.getItem());
 		if ((block instanceof ShulkerBoxBlock)) {
 			if (!world.isClientSide()) {
-				ItemStack itemStack = stack.transmuteCopy(Blocks.WHITE_SHULKER_BOX, 1);
+				ItemStack itemStack = stack.transmuteCopy(Blocks.DYED_SHULKER_BOX.white(), 1);
                 player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, itemStack, false));
 				player.awardStat(Stats.CLEAN_SHULKER_BOX);
 				LayeredCauldronBlock.lowerFillLevel(state, world, pos);
@@ -61,7 +61,7 @@ public class MilkCauldronBlock extends LayeredCauldronBlock {
 	};
 	static final CauldronInteraction MILKIFY_BANNER = (state, world, pos, player, hand, stack) -> {
 		if (!world.isClientSide()) {
-			ItemStack itemStack = new ItemStack(Items.WHITE_BANNER);
+			ItemStack itemStack = new ItemStack(Items.BANNER.white());
 			if (!player.getAbilities().instabuild) {
 				stack.shrink(1);
 			}
