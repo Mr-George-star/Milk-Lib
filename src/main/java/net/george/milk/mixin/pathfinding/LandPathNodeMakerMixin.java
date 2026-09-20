@@ -14,7 +14,7 @@ public class LandPathNodeMakerMixin {
 			method = "getStart",
 			at = @At(
 					value = "INVOKE",
-					target = "Lnet/minecraft/world/level/block/state/BlockState;is(Ljava/lang/Object;)Z"
+					target = "Lnet/minecraft/world/level/material/FluidState;is(Lnet/minecraft/tags/TagKey;)Z"
 			),
 			name = "blockState")
 	private BlockState treatMilkAsWater(BlockState blockState) {

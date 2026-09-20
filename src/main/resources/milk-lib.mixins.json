@@ -12,6 +12,7 @@
     "LingeringPotionEntityMixin",
     "MilkBucketItemMixin",
     "PointedDripstoneBlockMixin",
+    "PotionEntityInvoker",
     "PotionEntityMixin",
     "SplashPotionEntityMixin",
     "pathfinding.BirdPathNodeMakerMixin",

@@ -8,6 +8,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -71,7 +72,7 @@ public class MilkCauldronBlock extends LayeredCauldronBlock {
 			} else if (player.getInventory().add(itemStack)) {
 				player.inventoryMenu.sendAllDataToRemote();
 			} else {
-				player.drop(itemStack, false);
+				player.drop(itemStack, false, Prediction.SERVER_ONLY);
 			}
 
 			player.awardStat(Stats.CLEAN_BANNER);

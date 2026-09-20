@@ -4,7 +4,6 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.registry.FabricPotionBrewingBuilder;
 import net.fabricmc.fabric.api.transfer.v1.fluid.CauldronFluidContent;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
@@ -36,6 +35,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.component.Consumable;
 import net.minecraft.world.level.block.*;
@@ -101,6 +101,8 @@ public class MilkLib implements ModInitializer {
 	// effect & potion
 	public static final Holder.Reference<MobEffect> RANDOM_PURGE = Registry
 			.registerForHolder(BuiltInRegistries.MOB_EFFECT, id("random_purge"), new RandomPurgeEffect());
+	public static final Holder.Reference<Potion> RANDOM_PURGE_POTION = Registry
+			.registerForHolder(BuiltInRegistries.POTION, id("random_purge"), new Potion("random_purge", createRandomPurgeEffect()));
 
 	@Override
 	public void onInitialize() {
@@ -161,14 +163,6 @@ public class MilkLib implements ModInitializer {
 				list.add(Component.translatable("item.milk-lib.lingering_milk_bottle.tooltip").withStyle(ChatFormatting.GRAY));
 			}
 		});
-
-		/* recipe */
-		FabricPotionBrewingBuilder.BUILD.register(builder -> {
-			builder.addContainer(MILK_BOTTLE);
-			builder.addContainer(SPLASH_MILK_BOTTLE);
-            builder.addContainerRecipe(MILK_BOTTLE, GUNPOWDER, SPLASH_MILK_BOTTLE);
-            builder.addContainerRecipe(SPLASH_MILK_BOTTLE, DRAGON_BREATH, LINGERING_MILK_BOTTLE);
-        });
 	}
 
 	public static void registerMilkCauldronInteractions() {

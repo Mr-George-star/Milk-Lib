@@ -12,6 +12,7 @@ import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.attribute.EnvironmentAttributes;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DispensibleContainerItem;
 import net.minecraft.world.item.Item;
@@ -128,7 +129,7 @@ public abstract class MilkBucketItemMixin implements DispensibleContainerItem {
 	@Unique
 	private static BlockHitResult milkLib$raycast(Level world, Player player) {
 		Vec3 eyePos = player.getEyePosition();
-		Vec3 rotated = eyePos.add(player.calculateViewVector(player.getXRot(), player.getYRot()).scale(player.blockInteractionRange()));
+		Vec3 rotated = eyePos.add(Entity.calculateViewVector(player.getXRot(), player.getYRot()).scale(player.blockInteractionRange()));
 		return world.clip(new ClipContext(eyePos, rotated, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
 	}
 }

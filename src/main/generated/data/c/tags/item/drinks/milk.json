@@ -1,7 +1,8 @@
 {
   "values": [
-    "milk-lib:milk_bottle",
-    "milk-lib:splash_milk_bottle",
-    "milk-lib:lingering_milk_bottle"
+    {
+      "id": "#c:milk_bottle",
+      "required": false
+    }
   ]
 }

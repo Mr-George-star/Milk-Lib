@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "milk-lib:milk_arrow"
+        "recipes": "milk-lib:milk_arrow"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

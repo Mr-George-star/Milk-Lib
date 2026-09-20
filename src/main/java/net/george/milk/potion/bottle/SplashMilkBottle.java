@@ -1,5 +1,6 @@
 package net.george.milk.potion.bottle;
 
+import net.george.milk.MilkLib;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -10,6 +11,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.AbstractThrownPotion;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownSplashPotion;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
@@ -46,7 +48,7 @@ public class SplashMilkBottle extends SplashPotionItem {
 	@Override
 	public ItemStack getDefaultInstance() {
 		ItemStack stack = super.getDefaultInstance();
-		stack.remove(DataComponents.POTION_CONTENTS);
+		stack.set(DataComponents.POTION_CONTENTS, new PotionContents(MilkLib.RANDOM_PURGE_POTION));
 		return stack;
 	}
 

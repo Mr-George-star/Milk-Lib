@@ -9,15 +9,18 @@ import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider;
 import net.fabricmc.fabric.api.tag.convention.v2.ConventionalFluidTags;
 import net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags;
 import net.george.milk.api.DrippableFluidManager;
+import net.minecraft.advancements.Advancement;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.data.recipes.BrewingRecipeBuilder;
 import net.minecraft.data.recipes.RecipeCategory;
-import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.RecipeProvider;
+import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.block.Blocks;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
@@ -125,8 +128,10 @@ public class MilkLibDataGenerator implements DataGeneratorEntrypoint {
 
         @NotNull
         @Override
-        protected RecipeProvider createRecipeProvider(@NotNull HolderLookup.Provider registries, @NotNull RecipeOutput output) {
-            return new RecipeProvider(registries, output) {
+        protected RecipeProvider createRecipeProvider(@NotNull HolderLookup.Provider registries,
+                                                      @NotNull BootstrapContext<Recipe<?>> recipes,
+                                                      @NotNull BootstrapContext<Advancement> advancements) {
+            return new RecipeProvider(recipes, advancements) {
                 @Override
                 public void buildRecipes() {
                     this.shaped(RecipeCategory.MISC, MilkLib.MILK_ARROW, 8)
@@ -137,6 +142,18 @@ public class MilkLibDataGenerator implements DataGeneratorEntrypoint {
                             .pattern("AAA")
                             .unlockedBy(getHasName(Items.ARROW), has(Items.ARROW))
                             .save(this.output);
+                    BrewingRecipeBuilder.brewingContainerTransform(
+                            MilkLib.MILK_BOTTLE,
+                            MilkLib.RANDOM_PURGE_POTION,
+                            Items.GUNPOWDER,
+                            MilkLib.SPLASH_MILK_BOTTLE
+                    ).save(this.output);
+                    BrewingRecipeBuilder.brewingContainerTransform(
+                            MilkLib.SPLASH_MILK_BOTTLE,
+                            MilkLib.RANDOM_PURGE_POTION,
+                            Items.DRAGON_BREATH,
+                            MilkLib.LINGERING_MILK_BOTTLE
+                    ).save(this.output);
                 }
             };
         }

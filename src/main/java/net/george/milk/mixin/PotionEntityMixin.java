@@ -9,6 +9,7 @@ import net.minecraft.world.entity.projectile.ItemSupplier;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.AbstractThrownPotion;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.level.storage.ValueInput;
@@ -26,9 +27,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @SuppressWarnings("AddedMixinMembersNamePattern")
 @Mixin(AbstractThrownPotion.class)
 public abstract class PotionEntityMixin extends ThrowableItemProjectile implements ItemSupplier, PotionItemEntityExtensions {
-    @Shadow protected abstract void dowseFire(BlockPos pos);
     @Shadow protected abstract void onHitAsPotion(ServerLevel world, ItemStack stack, HitResult hitResult);
-    @Shadow protected abstract void onHitAsWater(ServerLevel level);
+    @Shadow protected abstract void affectEntitiesAround(ServerLevel level, PotionContents potion);
 
     @Unique
     private boolean milk = false;
@@ -42,11 +42,11 @@ public abstract class PotionEntityMixin extends ThrowableItemProjectile implemen
         if (isMilk()) {
             Direction side = hitResult.getDirection();
             BlockPos pos = hitResult.getBlockPos().relative(side);
-            this.dowseFire(pos);
-            this.dowseFire(pos.relative(side.getOpposite()));
+            ((PotionEntityInvoker) this).milkLib$douseFire(pos);
+            ((PotionEntityInvoker) this).milkLib$douseFire(pos.relative(side.getOpposite()));
 
-            for (Direction direction2 : Direction.Plane.HORIZONTAL) {
-                this.dowseFire(pos.relative(direction2));
+            for (Direction direction : Direction.Plane.HORIZONTAL) {
+                ((PotionEntityInvoker) this).milkLib$douseFire(pos.relative(direction));
             }
         }
     }
@@ -57,7 +57,7 @@ public abstract class PotionEntityMixin extends ThrowableItemProjectile implemen
             super.onHit(hitResult);
             if (!this.level().isClientSide()) {
                 ServerLevel serverWorld = (ServerLevel) this.level();
-                onHitAsWater(serverWorld);
+                affectEntitiesAround(serverWorld, PotionContents.EMPTY);
                 onHitAsPotion(serverWorld, null, hitResult);
 
                 this.level().levelEvent(LevelEvent.PARTICLES_INSTANT_POTION_SPLASH, this.blockPosition(), 0xFFFFFF);

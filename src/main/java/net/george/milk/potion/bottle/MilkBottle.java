@@ -10,6 +10,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.gameevent.GameEvent;
 import org.jetbrains.annotations.NotNull;
@@ -62,7 +63,7 @@ public class MilkBottle extends PotionItem {
 	@Override
 	public ItemStack getDefaultInstance() {
 		ItemStack stack = super.getDefaultInstance();
-		stack.remove(DataComponents.POTION_CONTENTS);
+		stack.set(DataComponents.POTION_CONTENTS, new PotionContents(MilkLib.RANDOM_PURGE_POTION));
 		return stack;
 	}
 

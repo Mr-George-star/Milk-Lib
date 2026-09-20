@@ -14,7 +14,7 @@ public class MobNavigationMixin {
 			method = "getSurfaceY",
 			at = @At(
 					value = "INVOKE",
-					target = "Lnet/minecraft/world/level/block/state/BlockState;is(Ljava/lang/Object;)Z"
+					target = "Lnet/minecraft/world/level/material/FluidState;is(Lnet/minecraft/tags/TagKey;)Z"
 			),
 			name = "state")
 	private BlockState treatMilkAsWater(BlockState state) {

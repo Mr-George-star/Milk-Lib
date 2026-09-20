@@ -1,6 +1,5 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "A": "minecraft:arrow",
     "L": "milk-lib:lingering_milk_bottle"

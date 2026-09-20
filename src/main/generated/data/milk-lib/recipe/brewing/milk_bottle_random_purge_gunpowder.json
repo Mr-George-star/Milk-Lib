@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:brewing",
+  "input": {
+    "item": "milk-lib:milk_bottle",
+    "potion_contents": {
+      "potions": "milk-lib:random_purge"
+    }
+  },
+  "output": {
+    "components": {
+      "minecraft:potion_contents": {
+        "potion": "milk-lib:random_purge"
+      }
+    },
+    "id": "milk-lib:splash_milk_bottle"
+  },
+  "reagent": {
+    "item": "minecraft:gunpowder"
+  }
+}
