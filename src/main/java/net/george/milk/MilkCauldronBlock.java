@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.cauldron.CauldronInteraction;
 import net.minecraft.core.cauldron.CauldronInteractions;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
@@ -34,8 +35,8 @@ import java.util.List;
 
 public class MilkCauldronBlock extends LayeredCauldronBlock {
 	static final CauldronInteraction.Dispatcher DISPATCHER = CauldronInteractions.newDispatcher("milk");
-	static final CauldronInteraction FILL_FROM_BUCKET = (ignored, world, pos, player, hand, stack) ->
-			CauldronInteractions.emptyBucket(world, pos, player, hand, stack, MilkLib.MILK_CAULDRON.defaultBlockState().setValue(LEVEL, 3), SoundEvents.BUCKET_EMPTY);
+	static final CauldronInteraction FILL_FROM_BUCKET = (state, world, pos, player, hand, stack) ->
+			emptyBucket(state, world, pos, player, hand, stack, MilkLib.MILK_CAULDRON.defaultBlockState().setValue(LEVEL, 3), SoundEvents.BUCKET_EMPTY);
 	static final CauldronInteraction EMPTY_TO_BUCKET = (state, world, pos, player, hand, stack) ->
 			CauldronInteractions.fillBucket(state, world, pos, player, hand, stack, new ItemStack(Items.MILK_BUCKET), blockState -> blockState.getValue(LEVEL) == 3, SoundEvents.BUCKET_FILL);
 	static final CauldronInteraction MILKIFY_DYEABLE_ITEM = (state, world, pos, player, hand, stack) -> {
@@ -131,6 +132,23 @@ public class MilkCauldronBlock extends LayeredCauldronBlock {
 
 	public static CauldronInteraction addOutputToItemExchange(Item toFill, Item filled) {
 		return addBehavior(new OutputToItemCauldronBehavior(toFill, filled), toFill);
+	}
+
+	public static InteractionResult emptyBucket(final BlockState state, final Level level, final BlockPos pos, final Player player, final InteractionHand hand, final ItemStack itemInHand, final BlockState newState, final SoundEvent soundEvent) {
+		if (state.hasProperty(LEVEL) && state.getValue(LEVEL) != 0) {
+			return InteractionResult.FAIL;
+		}
+		if (!level.isClientSide()) {
+			Item itemUsed = itemInHand.getItem();
+			player.setItemInHand(hand, ItemUtils.createFilledResult(itemInHand, player, new ItemStack(Items.BUCKET)));
+			player.awardStat(Stats.FILL_CAULDRON);
+			player.awardStat(Stats.ITEM_USED.get(itemUsed));
+			level.setBlockAndUpdate(pos, newState);
+			level.playSound(null, pos, soundEvent, SoundSource.BLOCKS, 1.0F, 1.0F);
+			level.gameEvent(null, GameEvent.FLUID_PLACE, pos);
+		}
+
+		return InteractionResult.SUCCESS;
 	}
 
 	public record OutputToItemCauldronBehavior(Item toFill, Item filled) implements CauldronInteraction {
