@@ -34,13 +34,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = Item.class, priority = 921) // apply sooner, minimize conflicts
+@Mixin(Item.class)
 public abstract class MilkBucketItemMixin implements DispensibleContainerItem {
 	@Inject(method = "use", at = @At("HEAD"), cancellable = true)
 	private void onUse(Level level, Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
 		ItemStack stack = player.getItemInHand(hand);
 		if (!stack.is(Items.MILK_BUCKET)) {
-			cir.cancel();
 			return;
 		}
 
@@ -50,7 +49,6 @@ public abstract class MilkBucketItemMixin implements DispensibleContainerItem {
 			return;
 		}
 		if (hitResult.getType() != HitResult.Type.BLOCK) {
-			cir.setReturnValue(InteractionResult.PASS);
 			return;
 		}
 
