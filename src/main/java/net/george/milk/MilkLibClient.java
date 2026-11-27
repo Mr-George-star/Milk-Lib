@@ -30,7 +30,7 @@ public class MilkLibClient implements ClientModInitializer {
                 new Material(stillTexture),
                 new Material(flowingTexture),
                 null,
-                BlockTintSources.constant(0XFFFFFF)
+                BlockTintSources.constant(0xFFFFFFFF)
         ));
     }
 }
